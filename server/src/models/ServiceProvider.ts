@@ -1,0 +1,142 @@
+import mongoose, { Document, Schema, Types } from 'mongoose';
+
+export interface ILocation {
+  type: 'Point';
+  coordinates: [number, number]; // [longitude, latitude]
+  address: string;
+}
+
+export interface IService {
+  _id?: Types.ObjectId;
+  name: string;
+  duration: number; // in minutes
+  price: number;
+  description?: string;
+}
+
+export interface IWorkingHours {
+  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  open: string; // HH:mm format
+  close: string; // HH:mm format
+  isClosed: boolean;
+}
+
+export interface IServiceProvider extends Document {
+  userId: Types.ObjectId;
+  businessName: string;
+  category: string;
+  description: string;
+  location: ILocation;
+  services: IService[];
+  workingHours: IWorkingHours[];
+  rating: number;
+  totalRatings: number;
+  isVerified: boolean;
+  images: string[];
+}
+
+const serviceProviderSchema = new Schema<IServiceProvider>({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  businessName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  category: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: true
+    },
+    coordinates: {
+      type: [Number],
+      required: true
+    },
+    address: {
+      type: String,
+      required: true
+    }
+  },
+  services: [{
+    name: {
+      type: String,
+      required: true
+    },
+    duration: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0
+    },
+    description: String
+  }],
+  workingHours: [{
+    day: {
+      type: String,
+      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+      required: true
+    },
+    open: {
+      type: String,
+      required: true,
+      match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+    },
+    close: {
+      type: String,
+      required: true,
+      match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+    },
+    isClosed: {
+      type: Boolean,
+      default: false
+    }
+  }],
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalRatings: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  images: [{
+    type: String
+  }]
+}, {
+  timestamps: true
+});
+
+// Create 2dsphere index for location-based queries
+serviceProviderSchema.index({ location: '2dsphere' });
+
+// Create text index for search
+serviceProviderSchema.index({
+  businessName: 'text',
+  description: 'text',
+  'services.name': 'text'
+});
+
+export const ServiceProvider = mongoose.model<IServiceProvider>('ServiceProvider', serviceProviderSchema); 
