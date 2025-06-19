@@ -20,16 +20,17 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// FIX: Handle OPTIONS preflight requests very early in the middleware chain
-// This ensures CORS preflight requests are handled BEFORE any authentication or other middleware.
-app.options('/api/auth/*', cors()); // Specific to auth routes for now, can be broadened later if needed
+// FIX: Handle OPTIONS preflight requests very early in the middleware chain.
+app.options('*', cors());
 
-// Body parser - Apply before any other middleware that reads req.body
+// FIX: Tell Express to trust proxy headers for accurate IP detection (Vercel, Nginx, etc.)
+app.set('trust proxy', 1); // Trust the first proxy in the chain
+
+// Body parser - Apply after the global OPTIONS handler
 app.use(express.json());
 
-// Enable CORS - General CORS for all other requests
-// Note: The app.options above handles the preflight for /api/auth/* routes explicitly.
-app.use(cors()); // This general CORS middleware will apply to actual GET/POST requests too
+// Enable CORS - General CORS for all other requests (actual GET/POST/PUT etc.)
+app.use(cors());
 
 // Set security headers
 app.use(helmet());
@@ -55,7 +56,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz')
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Register your API Routes - Apply after general middleware
+// Register your API Routes - Apply after all general middleware
 app.use('/api/auth', authRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/appointments', appointmentRoutes);
