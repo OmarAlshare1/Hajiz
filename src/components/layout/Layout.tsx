@@ -45,7 +45,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <span className="sr-only">Hajiz</span>
                 <img
                   className="h-8 w-auto"
-                  src="/logo.svg"
+                  src="/hajiz logo.jpeg"
                   alt="Hajiz"
                 />
               </Link>
@@ -103,7 +103,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <span className="sr-only">Hajiz</span>
               <img
                 className="h-8 w-auto"
-                src="/logo.svg"
+                src="/hajiz logo.jpeg"
                 alt="Hajiz"
               />
             </Link>
@@ -146,17 +146,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="bg-white mt-auto">
         <div className="mx-auto max-w-7xl px-6 py-12 md:flex md:items-center md:justify-between lg:px-8">
-          <div className="flex justify-center space-x-6 md:order-2">
-            <Link href="/privacy" className="text-gray-400 hover:text-gray-500">
-              {t('privacy')}
-            </Link>
-            <Link href="/terms" className="text-gray-400 hover:text-gray-500">
-              {t('terms')}
-            </Link>
+          <div className="flex justify-center space-x-6 md:order-2 items-center gap-4">
+            <a href="/policy" className="text-primary-600 hover:underline font-semibold">سياسة الخصوصية</a>
+            <img src="/syriatel.png" alt="Syriatel" className="h-8 w-auto" />
+            <img src="/mtn.png" alt="MTN" className="h-8 w-auto" />
+            <img src="/vercel.svg" alt="Vercel" className="h-8 w-auto" />
+            <img src="/next.svg" alt="Next.js" className="h-8 w-auto" />
           </div>
           <div className="mt-8 md:order-1 md:mt-0">
             <p className="text-center text-xs leading-5 text-gray-500">
-              &copy; {new Date().getFullYear()} Hajiz. {t('allRightsReserved')}
+              &copy; {new Date().getFullYear()} Hajiz. جميع الحقوق محفوظة
             </p>
           </div>
         </div>

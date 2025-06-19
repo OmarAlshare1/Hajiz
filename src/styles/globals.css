@@ -5,6 +5,8 @@
 @layer base {
   :root {
     direction: rtl;
+    background-color: #f7f5ed;
+    color: #222;
   }
 
   html {

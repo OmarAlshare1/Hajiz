@@ -2,14 +2,28 @@
 
 import { useState } from 'react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { search } from '../../lib/api';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Search:', searchQuery);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await search.providers(searchQuery);
+      setResults(res.data);
+    } catch (err) {
+      setError('حدث خطأ أثناء البحث');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,7 +46,7 @@ export default function HomePage() {
       <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            حاجز - احجز موعدك بسهولة
+            حجز - احجز موعدك بسهولة
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">
             منصة حجز المواعيد الأولى في سوريا. احجز موعدك مع أفضل مقدمي الخدمات في مجالات متعددة.
@@ -68,6 +82,30 @@ export default function HomePage() {
                 بحث
               </button>
             </form>
+            {loading && <div className="mt-4 text-primary-600">جاري البحث...</div>}
+            {error && <div className="mt-4 text-red-600">{error}</div>}
+            {results.length > 0 && (
+              <div className="mt-6 text-right">
+                <h3 className="text-lg font-semibold mb-2">نتائج البحث:</h3>
+                <ul className="space-y-4">
+                  {results.map((provider) => (
+                    <li key={provider._id} className="p-4 border rounded-md bg-white shadow">
+                      <div className="font-bold">{provider.businessName}</div>
+                      <div className="text-sm text-gray-600">{provider.category}</div>
+                      <div className="text-sm text-gray-500">{provider.description}</div>
+                      <div className="mt-2">
+                        <span className="font-semibold">الخدمات:</span>
+                        <ul className="list-disc list-inside">
+                          {provider.services.map((service: any, idx: number) => (
+                            <li key={idx}>{service.name} - {service.price} ل.س</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -75,8 +113,11 @@ export default function HomePage() {
       {/* Features section */}
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-base font-semibold leading-7 text-primary-600">
-            لماذا حاجز؟
+          <h2
+            className="text-base font-semibold leading-7 text-primary-600 cursor-pointer hover:underline"
+            onClick={() => router.push('/policy')}
+          >
+            لماذا حجز؟
           </h2>
           <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             كل ما تحتاجه لإدارة مواعيدك

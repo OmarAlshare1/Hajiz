@@ -1,81 +1,51 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import Link from 'next/link';
-import { auth } from '@/lib/api';
-
-const loginSchema = z.object({
-  phone: z.string().min(1, 'required').regex(/^\+?[0-9]{10,}$/, 'invalidPhone'),
-  password: z.string().min(8, 'passwordMinLength'),
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth(); // login from useAuth is mutateAsync
+  const router = useRouter();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  const [isLoading, setIsLoading] = useState(false); // New loading state for button
 
-  const onSubmit = async (data: LoginFormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(''); // Clear previous errors
+    setIsLoading(true); // Start loading
+
     try {
-      setIsLoading(true);
-      setError('');
-      const response = await auth.login(data);
-      localStorage.setItem('token', response.data.token);
-      router.push('/');
+      await login({ phone, password });
+      // On success, redirection is handled by useAuth hook
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred');
+      setError(err.response?.data?.message || 'فشل تسجيل الدخول. يرجى التحقق من رقم الهاتف وكلمة المرور.');
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Stop loading
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <Link href="/" className="flex justify-center">
-            <span className="sr-only">Hajiz</span>
-            <img
-              className="h-12 w-auto"
-              src="/logo.svg"
-              alt="Hajiz"
-            />
-          </Link>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            تسجيل الدخول
+    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 pt-24"> {/* Added pt-24 for fixed navbar */}
+      <div className="max-w-md w-full space-y-8 bg-white rounded-lg shadow-xl p-8 border-t-4 border-primary-600"> {/* Enhanced styling */}
+        <div className="flex flex-col items-center">
+          <img className="h-24 w-auto mb-4" src="/hajiz logo.jpeg" alt="Hajiz" /> {/* Added logo */}
+          <h2 className="text-center text-3xl font-extrabold text-gray-900">
+            تسجيل الدخول إلى حسابك
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            ليس لديك حساب؟{' '}
-            <Link
-              href="/auth/register"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              سجل الآن
-            </Link>
+             ادخل معلومات حسابك للمتابعة.
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="mr-3">
-                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
-                </div>
-              </div>
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+              <span className="block sm:inline">{error}</span>
             </div>
           )}
 
@@ -86,20 +56,15 @@ export default function LoginPage() {
               </label>
               <input
                 id="phone"
-                type="tel"
-                autoComplete="tel"
-                {...register('phone')}
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  errors.phone ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
+                name="phone"
+                type="tel" // Use type="tel" for phone numbers
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm"
                 placeholder="رقم الهاتف"
-                dir="ltr"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                dir="ltr" // Ensure LTR for phone numbers
               />
-              {errors.phone && (
-                <p className="mt-2 text-sm text-red-600">
-                  {errors.phone.message}
-                </p>
-              )}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
@@ -107,19 +72,14 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
+                name="password"
                 type="password"
-                autoComplete="current-password"
-                {...register('password')}
-                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
-                  errors.password ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm`}
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm"
                 placeholder="كلمة المرور"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
-              {errors.password && (
-                <p className="mt-2 text-sm text-red-600">
-                  {errors.password.message}
-                </p>
-              )}
             </div>
           </div>
 
@@ -127,9 +87,9 @@ export default function LoginPage() {
             <div className="text-sm">
               <Link
                 href="/auth/forgot-password"
-                className="font-medium text-primary-600 hover:text-primary-500"
+                className="font-medium text-primary-600 hover:text-primary-800"
               >
-                نسيت كلمة المرور؟
+                هل نسيت كلمة المرور؟
               </Link>
             </div>
           </div>
@@ -137,14 +97,33 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600 disabled:opacity-50"
+              disabled={isLoading} // Disable button while loading
             >
-              {isLoading ? 'جاري التحميل...' : 'تسجيل الدخول'}
+              {isLoading ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
             </button>
+          </div>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              ليس لديك حساب؟{' '}
+              <Link
+                href="/auth/register-customer"
+                className="font-medium text-primary-600 hover:text-primary-800"
+              >
+                سجل كعميل
+              </Link>{' '}
+              أو{' '}
+              <Link
+                href="/auth/register-provider"
+                className="font-medium text-primary-600 hover:text-primary-800"
+              >
+                سجل كمقدم خدمة
+              </Link>
+            </p>
           </div>
         </form>
       </div>
     </div>
   );
-} 
+}

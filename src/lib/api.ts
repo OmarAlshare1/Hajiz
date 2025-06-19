@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -10,13 +10,15 @@ const api = axios.create({
 // Add a request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
-  (error) => {
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );
@@ -24,10 +26,12 @@ api.interceptors.request.use(
 // Add a response interceptor
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  async (error: AxiosError) => {
     if (error.response?.status === 401) {
       // Clear token and redirect to login
-      localStorage.removeItem('token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
       window.location.href = '/auth/login';
     }
     return Promise.reject(error);
@@ -44,6 +48,8 @@ export const auth = {
     email: string;
     password: string;
     role: 'customer' | 'provider';
+    businessName?: string;
+    category?: string;
   }) => api.post('/auth/register', data),
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (data: {
@@ -51,6 +57,12 @@ export const auth = {
     email?: string;
     password?: string;
   }) => api.put('/auth/profile', data),
+  requestPasswordReset: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+  verifyResetCode: (code: string) =>
+    api.post('/auth/verify-reset-code', { code }),
+  resetPassword: (data: { code: string; password: string }) =>
+    api.post('/auth/reset-password', data),
 };
 
 // Appointments
@@ -69,6 +81,8 @@ export const appointments = {
     notes?: string;
   }) => api.put(`/appointments/${id}`, data),
   delete: (id: string) => api.delete(`/appointments/${id}`),
+  updateStatus: (id: string, status: string) =>
+    api.put(`/appointments/${id}/status`, { status }),
 };
 
 // Service Providers
@@ -112,6 +126,18 @@ export const reviews = {
     comment?: string;
     appointmentId: string;
   }) => api.post(`/providers/${providerId}/reviews`, data),
+};
+
+export const search = {
+  providers: (query: string) => api.get(`/search/providers?q=${query}`),
+  categories: () => api.get('/search/categories'),
+  popularServices: () => api.get('/search/popular-services'),
+};
+
+export const forgotPassword = {
+  requestReset: (phone: string) => api.post('/auth/forgot-password/request', { phone }),
+  verifyCode: (phone: string, code: string) => api.post('/auth/forgot-password/verify', { phone, code }),
+  resetPassword: (phone: string, code: string, newPassword: string) => api.post('/auth/forgot-password/reset', { phone, code, newPassword }),
 };
 
 export default api; 

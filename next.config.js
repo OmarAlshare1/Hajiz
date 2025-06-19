@@ -2,11 +2,16 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['localhost', 'hajiz.co.uk']
+    domains: ['localhost', 'hajiz.co.uk', 'www.hajiz.co.uk'],
   },
-  env: {
-    API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
-  }
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:5000/api/:path*', // Proxy to your local backend for `next dev`
+      },
+    ];
+  },
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;

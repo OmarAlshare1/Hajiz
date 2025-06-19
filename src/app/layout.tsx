@@ -1,24 +1,24 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "../styles/globals.css";
-import Providers from './providers';
+import './globals.css';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import Navbar from '../components/Navbar';
+import ReactQueryProvider from '../components/ReactQueryProvider';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Hajiz - حاجز",
-  description: "منصة حجز المواعيد الأولى في سوريا",
+  title: 'Hajiz',
+  description: 'منصة حجز مقدمي الخدمات',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+      <body className={inter.className + ' bg-gray-50 min-h-screen'}>
+        <ReactQueryProvider>
+          <Navbar />
+          <main>{children}</main>
+        </ReactQueryProvider>
       </body>
     </html>
   );
