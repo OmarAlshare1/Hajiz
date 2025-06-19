@@ -20,11 +20,16 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// Body parser
+// FIX: Handle OPTIONS preflight requests very early in the middleware chain
+// This ensures CORS preflight requests are handled BEFORE any authentication or other middleware.
+app.options('/api/auth/*', cors()); // Specific to auth routes for now, can be broadened later if needed
+
+// Body parser - Apply before any other middleware that reads req.body
 app.use(express.json());
 
-// Enable CORS
-app.use(cors());
+// Enable CORS - General CORS for all other requests
+// Note: The app.options above handles the preflight for /api/auth/* routes explicitly.
+app.use(cors()); // This general CORS middleware will apply to actual GET/POST requests too
 
 // Set security headers
 app.use(helmet());
@@ -50,10 +55,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz')
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// FIX: Handle OPTIONS preflight requests for auth routes
-app.options('/api/auth/*', cors()); // Respond to OPTIONS requests for /api/auth routes with CORS headers
-
-// Register your API Routes
+// Register your API Routes - Apply after general middleware
 app.use('/api/auth', authRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/appointments', appointmentRoutes);
@@ -65,7 +67,7 @@ app.get('/', (_req, res) => {
   return;
 });
 
-// Error handling middleware
+// Error handling middleware - This must be the last middleware
 app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
