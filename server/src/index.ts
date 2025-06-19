@@ -5,7 +5,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import * as xss from 'xss-clean';
 import * as hpp from 'hpp';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv'; // Keep this import at the top
+import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
 // Import routes
@@ -49,6 +49,9 @@ app.use(limiter);
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz')
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error('MongoDB connection error:', err));
+
+// FIX: Handle OPTIONS preflight requests for auth routes
+app.options('/api/auth/*', cors()); // Respond to OPTIONS requests for /api/auth routes with CORS headers
 
 // Register your API Routes
 app.use('/api/auth', authRoutes);
