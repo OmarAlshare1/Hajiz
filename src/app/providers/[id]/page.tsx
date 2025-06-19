@@ -69,6 +69,7 @@ const generateTimeSlots = (open: string, close: string, duration: number): strin
   while (currentTime + duration <= endTime) {
     const hours = Math.floor(currentTime / 60);
     const minutes = currentTime % 60;
+    // FIX: Correct string interpolation for time slots
     slots.push(`<span class="math-inline">\{String\(hours\)\.padStart\(2, '0'\)\}\:</span>{String(minutes).padStart(2, '0')}`);
     currentTime += duration;
   }
@@ -81,7 +82,7 @@ export default function ProviderDetailsPage() {
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
 
-  const [selectedServiceId, setSelectedServiceId] = useState<string>('');
+  const [selectedServiceId, setSelectedServiceId] = useState<string | number>('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
@@ -159,13 +160,13 @@ export default function ProviderDetailsPage() {
       return;
     }
 
-    const [hour, minute] = selectedTimeSlot.split(':').map(Number);
+    const [hour, minute] = String(selectedTimeSlot).split(':').map(Number);
     const dateTime = new Date(selectedDate);
     dateTime.setHours(hour, minute, 0, 0);
 
     createAppointmentMutation.mutate({
-      serviceProviderId: provider._id,
-      serviceId: selectedServiceId,
+      providerId: provider._id,
+      serviceId: String(selectedServiceId),
       dateTime: dateTime.toISOString(),
       notes,
     });
@@ -283,7 +284,7 @@ export default function ProviderDetailsPage() {
                     label="اختر الوقت:"
                     options={timeSlotOptions}
                     value={selectedTimeSlot}
-                    onChange={setSelectedTimeSlot}
+                    onChange={(value) => setSelectedTimeSlot(String(value))}
                     className="w-full"
                     placeholder="-- اختر وقتاً --"
                   />

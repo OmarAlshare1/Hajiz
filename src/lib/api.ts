@@ -27,12 +27,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // Clear token and redirect to login
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-      }
-      window.location.href = '/auth/login';
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      // Let components handle navigation using Next.js router
     }
     return Promise.reject(error);
   }
@@ -68,6 +65,7 @@ export const auth = {
 // Appointments
 export const appointments = {
   getAll: () => api.get('/appointments'),
+  getProviderAppointments: () => api.get('/appointments/provider'),
   getById: (id: string) => api.get(`/appointments/${id}`),
   create: (data: {
     providerId: string;
@@ -87,6 +85,34 @@ export const appointments = {
 
 // Service Providers
 export const providers = {
+  getProfile: () => api.get('/providers/profile'),
+  update: ({ id, data }: {
+    id: string;
+    data: {
+      businessName?: string;
+      category?: string;
+      description?: string;
+      location?: {
+        type: 'Point';
+        coordinates: [number, number];
+        address: string;
+      };
+    };
+  }) => api.put(`/providers/${id}`, data),
+
+  addService: (data: {
+    name: string;
+    duration: number;
+    price: number;
+    description: string;
+  }) => api.post('/providers/services', data),
+  updateService: (serviceId: string, data: {
+    name?: string;
+    duration?: number;
+    price?: number;
+    description?: string;
+  }) => api.put(`/providers/services/${serviceId}`, data),
+  deleteService: (serviceId: string) => api.delete(`/providers/services/${serviceId}`),
   getAll: (params?: {
     location?: string;
     service?: string;
@@ -96,19 +122,6 @@ export const providers = {
   getServices: (id: string) => api.get(`/providers/${id}/services`),
   getAvailability: (id: string, date: string) =>
     api.get(`/providers/${id}/availability`, { params: { date } }),
-  addService: (data: {
-    name: string;
-    description: string;
-    price: number;
-    duration: number;
-  }) => api.post('/providers/services', data),
-  updateService: (id: string, data: {
-    name?: string;
-    description?: string;
-    price?: number;
-    duration?: number;
-  }) => api.put(`/providers/services/${id}`, data),
-  deleteService: (id: string) => api.delete(`/providers/services/${id}`),
   updateWorkingHours: (data: {
     day: number;
     start: string;
@@ -140,4 +153,4 @@ export const forgotPassword = {
   resetPassword: (phone: string, code: string, newPassword: string) => api.post('/auth/forgot-password/reset', { phone, code, newPassword }),
 };
 
-export default api; 
+export default api;

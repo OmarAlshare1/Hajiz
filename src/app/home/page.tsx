@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { useQuery } from '@tanstack/react-query';
-import { search, providers as providersApi } from '../../lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// FIX: Explicitly import search and providers as providersApi
+import { search, providers as providersApi } from '../../lib/api'; 
 
 const categories = [
   { name: 'حلاق', icon: '💈' },
@@ -21,30 +22,42 @@ const categories = [
 ];
 
 export default function HomePage() {
-  const { user, isLoading: userLoading, isAuthenticated } = useAuth(); // Destructure isAuthenticated
+  interface AuthUser { _id: string; name: string; email?: string; phone: string; role: 'customer' | 'provider'; }
+  const { user, isLoading: userLoading, isAuthenticated } = useAuth<AuthUser>();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
+  // State for the "Add Service" modal form
+  const [addServiceFormData, setAddServiceFormData] = useState({
+    name: '',
+    duration: 0,
+    price: 0,
+    description: '',
+  });
+  const [addServiceError, setAddServiceError] = useState('');
+  const [addServiceSuccess, setAddServiceSuccess] = useState('');
+
   const { data: popularProviders, isLoading: popularLoading } = useQuery({
     queryKey: ['popularProviders'],
     queryFn: async () => {
-      // Ensure search.providers returns a structured object with a 'providers' array
-      const res = await search.providers('');
-      return res.data?.providers || []; // Default to empty array if providers is null/undefined
+      const res = await search.providers(''); // 'search' should now be recognized
+      return res.data?.providers || [];
     },
-    enabled: typeof window !== 'undefined', // Only run on client
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    enabled: typeof window !== 'undefined',
   });
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearching(true);
     try {
-      const res = await search.providers(searchQuery);
+      const res = await search.providers(searchQuery); // 'search' should now be recognized
       setSearchResults(res.data?.providers || []);
     } catch (error) {
       console.error('Error during search:', error);
@@ -52,6 +65,41 @@ export default function HomePage() {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  // Mutation for adding a new service
+  const addServiceMutation = useMutation({
+    mutationFn: providersApi.addService,
+    onSuccess: () => {
+      setAddServiceSuccess('تمت إضافة الخدمة بنجاح!');
+      setAddServiceError('');
+      queryClient.invalidateQueries({ queryKey: ['provider-profile'] });
+      setAddServiceFormData({ name: '', duration: 0, price: 0, description: '' });
+      setTimeout(() => setShowModal(false), 1500);
+    },
+    onError: (err: any) => {
+      setAddServiceError(err.response?.data?.message || 'فشل إضافة الخدمة.');
+      setAddServiceSuccess('');
+      console.error('Add service error:', err);
+    },
+  });
+
+  const handleAddServiceModalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addServiceFormData.name || addServiceFormData.duration <= 0 || addServiceFormData.price <= 0) {
+      setAddServiceError('الرجاء ملء جميع الحقول المطلوبة (الاسم، المدة، السعر).');
+      return;
+    }
+    setAddServiceError('');
+    addServiceMutation.mutate(addServiceFormData);
+  };
+
+  const handleAddServiceChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setAddServiceFormData((prev) => ({
+      ...prev,
+      [name]: type === 'number' ? parseFloat(value) || 0 : value,
+    }));
   };
 
   return (
@@ -136,7 +184,6 @@ export default function HomePage() {
       </div>
 
       {/* Recommended Providers Section */}
-      {/* FIX: Use optional chaining to safely access .length */}
       {isAuthenticated && popularProviders?.length > 0 && (
         <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-16">
           <h2 className="text-3xl font-bold text-gray-800 text-center mb-8">مقدمو خدمات ننصح بهم</h2>
@@ -168,7 +215,11 @@ export default function HomePage() {
       {user?.role === 'provider' && (
         <>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => {
+              setShowModal(true);
+              setAddServiceError('');
+              setAddServiceSuccess('');
+            }}
             className="fixed bottom-8 right-8 bg-green-700 text-white rounded-full w-16 h-16 flex items-center justify-center text-4xl shadow-lg hover:bg-green-800 transition z-40"
             title="أضف خدمة جديدة"
           >
@@ -184,14 +235,77 @@ export default function HomePage() {
                 >
                   ×
                 </button>
-                <h2 className="text-xl font-bold mb-4">إضافة خدمة جديدة</h2>
-                {/* Placeholder form - Connect this to your addService API */}
-                <form className="space-y-4">
-                  <input className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500" placeholder="اسم الخدمة" />
-                  <input className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500" placeholder="السعر" type="number" />
-                  <input className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500" placeholder="المدة (دقائق)" type="number" />
-                  <textarea className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500" placeholder="وصف الخدمة" rows={3} />
-                  <button type="submit" className="w-full bg-primary-600 text-white rounded p-2 hover:bg-primary-700 transition">إضافة</button>
+                <h2 className="text-xl font-bold mb-4 text-center">إضافة خدمة جديدة</h2>
+                {addServiceMutation.isPending && <div className="text-center text-primary-600 mb-4">جاري الإضافة...</div>}
+                {addServiceError && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span className="block sm:inline">{addServiceError}</span>
+                  </div>
+                )}
+                {addServiceSuccess && (
+                  <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span className="block sm:inline">{addServiceSuccess}</span>
+                  </div>
+                )}
+                <form onSubmit={handleAddServiceModalSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="serviceName" className="block text-sm font-medium text-gray-700 text-right mb-1">اسم الخدمة:</label>
+                    <input
+                      id="serviceName"
+                      name="name"
+                      type="text"
+                      value={addServiceFormData.name}
+                      onChange={handleAddServiceChange}
+                      className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500 text-right"
+                      placeholder="صالون حلاقة، استشارة طبية..."
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="servicePrice" className="block text-sm font-medium text-gray-700 text-right mb-1">السعر (ل.س):</label>
+                    <input
+                      id="servicePrice"
+                      name="price"
+                      type="number"
+                      value={addServiceFormData.price === 0 ? '' : addServiceFormData.price}
+                      onChange={handleAddServiceChange}
+                      className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500 text-right"
+                      placeholder="5000"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="serviceDuration" className="block text-sm font-medium text-gray-700 text-right mb-1">المدة (دقائق):</label>
+                    <input
+                      id="serviceDuration"
+                      name="duration"
+                      type="number"
+                      value={addServiceFormData.duration === 0 ? '' : addServiceFormData.duration}
+                      onChange={handleAddServiceChange}
+                      className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500 text-right"
+                      placeholder="30"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="serviceDescription" className="block text-sm font-medium text-gray-700 text-right mb-1">الوصف (اختياري):</label>
+                    <textarea
+                      id="serviceDescription"
+                      name="description"
+                      value={addServiceFormData.description}
+                      onChange={handleAddServiceChange}
+                      rows={3}
+                      className="w-full border rounded p-2 focus:ring-primary-500 focus:border-primary-500 text-right"
+                      placeholder="وصف تفصيلي للخدمة..."
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition disabled:opacity-50"
+                    disabled={addServiceMutation.isPending}
+                  >
+                    {addServiceMutation.isPending ? 'جاري الإضافة...' : 'حفظ الخدمة'}
+                  </button>
                 </form>
               </div>
             </div>

@@ -56,7 +56,7 @@ export default function ProvidersListPage() {
     },
     enabled: typeof window !== 'undefined',
     staleTime: 60 * 1000,
-    cacheTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -90,7 +90,7 @@ export default function ProvidersListPage() {
               label="التصنيف:"
               options={filterCategories}
               value={selectedCategory}
-              onChange={setSelectedCategory}
+              onChange={(value) => setSelectedCategory(String(value))}
               className="w-full"
               placeholder="اختر التصنيف"
             />
@@ -102,7 +102,7 @@ export default function ProvidersListPage() {
               label="التقييم الأدنى:"
               options={ratingOptions}
               value={minRating}
-              onChange={setMinRating}
+              onChange={(value) => setMinRating(Number(value))}
               className="w-full"
               placeholder="أي تقييم"
             />

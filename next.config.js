@@ -8,7 +8,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5000/api/:path*', // Proxy to your local backend for `next dev`
+        destination: 'hajiz-backend-kscmjmdcm-omars-projects-ce6be162.vercel.app*', // Proxy to your local backend for `next dev`
       },
     ];
   },

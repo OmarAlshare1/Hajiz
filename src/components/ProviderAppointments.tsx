@@ -1,0 +1,160 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { appointments } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import CustomSelect from '@/components/CustomSelect';
+
+export default function ProviderAppointments() {
+  const { user, isLoading: userLoading } = useAuth();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+
+  // Fetch provider's appointments
+  const { data: appointmentsData, isLoading: appointmentsLoading, error: appointmentsError } = useQuery({
+    queryKey: ['providerAppointments', user?._id],
+    queryFn: async () => {
+      if (!user || user.role !== 'provider') {
+        throw new Error('User is not a provider or not authenticated');
+      }
+      const res = await appointments.getProviderAppointments();
+      return res.data.sort((a: any, b: any) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+    },
+    enabled: typeof window !== 'undefined' && !!user && user.role === 'provider',
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+
+  // Mutation for updating appointment status
+  const updateStatusMutation = useMutation({
+    mutationFn: (data: { appointmentId: string; status: string }) =>
+      appointments.updateStatus(data.appointmentId, data.status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['providerAppointments', user?._id] });
+      setFormSuccess('تم تحديث حالة الموعد بنجاح!');
+      setFormError('');
+    },
+    onError: (err: any) => {
+      console.error("Failed to update appointment status:", err);
+      setFormError(err.response?.data?.message || 'فشل تحديث حالة الموعد.');
+      setFormSuccess('');
+    },
+  });
+
+  const handleUpdateStatus = (appointmentId: string, status: string) => {
+    if (status === 'cancelled' && !window.confirm('هل أنت متأكد أنك تريد إلغاء هذا الموعد؟')) {
+      return;
+    }
+    updateStatusMutation.mutate({ appointmentId, status });
+  };
+
+  if (userLoading || appointmentsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-primary-600 border-opacity-50 mb-6"></div>
+          <p className="text-gray-700">جاري تحميل المواعيد...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user || user.role !== 'provider') {
+    router.push('/auth/login');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-bold text-red-600 mb-4">خطأ في الوصول</h2>
+          <p className="text-gray-700">هذه الصفحة مخصصة لمقدمي الخدمات فقط.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (appointmentsError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
+        <div className="text-center p-8 bg-white rounded-lg shadow-md">
+          <h2 className="text-xl font-bold text-red-600 mb-4">خطأ في تحميل المواعيد</h2>
+          <p className="text-gray-700">فشل تحميل مواعيد العملاء. يرجى المحاولة مرة أخرى لاحقاً.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-8 pt-24 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">مواعيد العملاء</h1>
+
+      {formError && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{formError}</span>
+        </div>
+      )}
+      {formSuccess && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <span className="block sm:inline">{formSuccess}</span>
+        </div>
+      )}
+
+      {appointmentsData && appointmentsData.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {appointmentsData.map((apt: any) => (
+            <div key={apt._id} className="bg-white rounded-lg shadow-md p-6 border-t-4
+              border-primary-600">
+
+              <div className={`
+                ${apt.status === 'confirmed' ? 'border-green-600' : ''}
+                ${apt.status === 'pending' ? 'border-yellow-600' : ''}
+                ${apt.status === 'cancelled' ? 'border-red-600' : ''}
+                ${apt.status === 'completed' && !apt.rating ? 'border-blue-600' : ''}
+                ${apt.status === 'completed' && apt.rating ? 'border-gray-400' : ''}
+              `}>
+                <p className="font-bold text-xl text-primary-700 mb-2">الخدمة: {apt.service?.name}</p>
+                <p className="text-sm text-gray-700 mb-1">العميل: {apt.customer?.name || 'غير معروف'} ({apt.customer?.phone || 'N/A'})</p>
+                <p className="text-sm text-gray-700 mb-1">
+                  التاريخ: {new Date(apt.dateTime).toLocaleString('ar-SY', { dateStyle: 'full', timeStyle: 'short' })}
+                </p>
+                <p className={`text-lg font-semibold mb-3
+                  ${apt.status === 'confirmed' ? 'text-green-600' : ''}
+                  ${apt.status === 'pending' ? 'text-yellow-600' : ''}
+                  ${apt.status === 'cancelled' ? 'text-red-600' : ''}
+                  ${apt.status === 'completed' ? 'text-gray-600' : ''}
+                `}>
+                  الحالة: {apt.status === 'pending' ? 'معلق' : apt.status === 'confirmed' ? 'مؤكد' : apt.status === 'cancelled' ? 'ملغى' : 'مكتمل'}
+                </p>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {apt.status === 'pending' && (
+                    <button onClick={() => handleUpdateStatus(apt._id, 'confirmed')} className="bg-green-500 text-white px-4 py-2 text-sm rounded-md hover:bg-green-600 transition" disabled={updateStatusMutation.isPending}>
+                      تأكيد
+                    </button>
+                  )}
+                  {(apt.status === 'pending' || apt.status === 'confirmed') && (
+                    <button onClick={() => handleUpdateStatus(apt._id, 'cancelled')} className="bg-red-500 text-white px-4 py-2 text-sm rounded-md hover:bg-red-600 transition" disabled={updateStatusMutation.isPending}>
+                      إلغاء
+                    </button>
+                  )}
+                  {apt.status === 'confirmed' && (
+                    <button onClick={() => handleUpdateStatus(apt._id, 'completed')} className="bg-blue-500 text-white px-4 py-2 text-sm rounded-md hover:bg-blue-600 transition" disabled={updateStatusMutation.isPending}>
+                      إتمام
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center p-8 bg-white rounded-lg shadow-sm">
+          <p className="text-lg text-gray-700">لا يوجد لديك مواعيد عملاء حالياً.</p>
+        </div>
+      )}
+    </div>
+  );
+}

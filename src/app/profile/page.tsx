@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointments } from '../../lib/api';
 import { Dialog } from '@headlessui/react'; // For the modal
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, isLoading: userLoading, updateProfile } = useAuth();
   const queryClient = useQueryClient(); // Get query client for mutation success handling
 

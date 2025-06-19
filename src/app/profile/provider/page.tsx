@@ -1,11 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { providers, appointments } from '../../../lib/api';
 import { Dialog } from '@headlessui/react';
 import CustomSelect from '../../../components/CustomSelect'; // Import CustomSelect
+
+// Helper function to convert day string to number
+const getDayNumber = (day: string): number => {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return days.indexOf(day.toLowerCase());
+};
 
 // Define interfaces for better type safety and clarity
 interface ILocation {
@@ -19,14 +26,14 @@ interface IService {
   name: string;
   duration: number; // in minutes
   price: number;
-  description?: string;
+  description: string;
 }
 
 interface IWorkingHours {
-  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  open: string; // HH:mm format
-  close: string; // HH:mm format
-  isClosed: boolean;
+  day: number;
+  start: string; // HH:mm format
+  end: string; // HH:mm format
+  isOpen: boolean;
 }
 
 interface IProviderData {
@@ -58,13 +65,42 @@ const allCategories = [
   { value: 'أخرى', label: 'أخرى' }
 ];
 
+// Helper for Arabic day names
+const arabicDays: { [key: number]: string } = {
+  0: 'الأحد',
+  1: 'الاثنين',
+  2: 'الثلاثاء',
+  3: 'الأربعاء',
+  4: 'الخميس',
+  5: 'الجمعة',
+  6: 'السبت'
+};
+
+// Generate time options for dropdowns (e.g., 09:00, 09:30, ..., 23:30)
+const generateTimeOptions = () => {
+  const times = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) { // 30 minute intervals
+      const hour = String(h).padStart(2, '0');
+      const minute = String(m).padStart(2, '0');
+      times.push({ value: `<span class="math-inline">\{hour\}\:</span>{minute}`, label: `<span class="math-inline">\{hour\}\:</span>{minute}` });
+    }
+  }
+  return times;
+};
+const timeOptions = generateTimeOptions();
+
+
 export default function ProviderProfilePage() {
+  const router = useRouter();
   const { user, isLoading: userLoading } = useAuth();
   const queryClient = useQueryClient();
 
   const [showEditProviderModal, setShowEditProviderModal] = useState(false);
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [showEditServiceModal, setShowEditServiceModal] = useState(false);
+  const [showEditWorkingHoursModal, setShowEditWorkingHoursModal] = useState(false); // New state for working hours modal
+
   const [selectedService, setSelectedService] = useState<IService | null>(null);
 
   const [providerEditFormData, setProviderEditFormData] = useState({
@@ -72,10 +108,11 @@ export default function ProviderProfilePage() {
     category: '',
     description: '',
     locationAddress: '',
-    locationCoordinates: [] as [number, number],
+    locationCoordinates: [0, 0] as [number, number],
   });
   const [addServiceFormData, setAddServiceFormData] = useState<IService>({ name: '', duration: 0, price: 0, description: '' });
   const [editServiceFormData, setEditServiceFormData] = useState<IService>({ name: '', duration: 0, price: 0, description: '' });
+  const [workingHoursFormData, setWorkingHoursFormData] = useState<IWorkingHours[]>([]); // New state for working hours form
 
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -94,6 +131,7 @@ export default function ProviderProfilePage() {
     },
     enabled: typeof window !== 'undefined' && !!user && user.role === 'provider',
     staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const { data: appointmentsData, isLoading: appointmentsLoading, error: appointmentsError } = useQuery({
@@ -104,17 +142,18 @@ export default function ProviderProfilePage() {
     },
     enabled: typeof window !== 'undefined' && !!user && user.role === 'provider',
     staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 
   const updateProviderMutation = useMutation({
-    mutationFn: providers.update, // Make sure providers.update expects (id: string, data: any) or just (data: any) if it updates logged-in provider
+    mutationFn: providers.update,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['provider-profile'] });
       setFormSuccess('تم تحديث معلومات مقدم الخدمة بنجاح!');
       setShowEditProviderModal(false);
       refetchProvider();
     },
-    onError: (err: any) => { // Use 'any' for error type or specific AxiosError
+    onError: (err: any) => {
       setFormError(err.response?.data?.message || 'فشل تحديث معلومات مقدم الخدمة');
     }
   });
@@ -127,7 +166,7 @@ export default function ProviderProfilePage() {
       setShowAddServiceModal(false);
       setAddServiceFormData({ name: '', duration: 0, price: 0, description: '' });
     },
-    onError: (err: any) => { // Use 'any' for error type
+    onError: (err: any) => {
       setFormError(err.response?.data?.message || 'فشل إضافة الخدمة');
     }
   });
@@ -141,7 +180,7 @@ export default function ProviderProfilePage() {
       setShowEditServiceModal(false);
       setSelectedService(null);
     },
-    onError: (err: any) => { // Use 'any' for error type
+    onError: (err: any) => {
       setFormError(err.response?.data?.message || 'فشل تحديث الخدمة');
     }
   });
@@ -152,7 +191,7 @@ export default function ProviderProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['provider-profile'] });
       setFormSuccess('تم حذف الخدمة بنجاح!');
     },
-    onError: (err: any) => { // Use 'any' for error type
+    onError: (err: any) => {
       setFormError(err.response?.data?.message || 'فشل حذف الخدمة');
     }
   });
@@ -164,10 +203,27 @@ export default function ProviderProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['provider-appointments'] });
       setFormSuccess('تم تحديث حالة الموعد بنجاح!');
     },
-    onError: (err: any) => { // Use 'any' for error type
+    onError: (err: any) => {
       setFormError(err.response?.data?.message || 'فشل تحديث حالة الموعد');
     }
   });
+
+  // NEW: Mutation for updating working hours
+  const updateWorkingHoursMutation = useMutation({
+    mutationFn: async (workingHoursData: IWorkingHours[]) => {
+      const response = await providers.updateWorkingHours(workingHoursData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['provider-profile'] }); // Invalidate provider profile to show new hours
+      setFormSuccess('تم تحديث ساعات العمل بنجاح!');
+      setShowEditWorkingHoursModal(false);
+    },
+    onError: (err: any) => {
+      setFormError(err.response?.data?.message || 'فشل تحديث ساعات العمل.');
+    }
+  });
+
 
   useEffect(() => {
     if (providerData) {
@@ -178,6 +234,19 @@ export default function ProviderProfilePage() {
         locationAddress: providerData.location?.address || '',
         locationCoordinates: providerData.location?.coordinates || [0, 0],
       });
+      // Initialize working hours form data
+      const defaultWorkingHours: IWorkingHours[] = [
+        0, 1, 2, 3, 4, 5, 6
+      ].map(day => {
+        const existing = providerData.workingHours.find(wh => wh.day === day);
+        return {
+          day,
+          start: existing?.start || '09:00',
+          end: existing?.end || '17:00',
+          isOpen: existing?.isOpen ?? true
+        };
+      });
+      setWorkingHoursFormData(defaultWorkingHours);
     }
   }, [providerData]);
 
@@ -193,6 +262,7 @@ export default function ProviderProfilePage() {
     }
   }, [selectedService]);
 
+
   const handleProviderEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -203,7 +273,7 @@ export default function ProviderProfilePage() {
     }
     try {
         await updateProviderMutation.mutateAsync({
-            id: providerData._id, // Pass providerData._id explicitly if your backend's providers.update expects (id, data)
+            id: providerData._id,
             data: {
               businessName: providerEditFormData.businessName,
               category: providerEditFormData.category,
@@ -219,6 +289,7 @@ export default function ProviderProfilePage() {
         setFormError(err.response?.data?.message || 'فشل تحديث معلومات مقدم الخدمة');
     }
   };
+
 
   const handleAddServiceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -249,6 +320,7 @@ export default function ProviderProfilePage() {
     }
   };
 
+
   const handleDeleteService = async (serviceId: string) => {
     setFormError('');
     setFormSuccess('');
@@ -260,6 +332,7 @@ export default function ProviderProfilePage() {
     }
   };
 
+
   const handleUpdateAppointmentStatus = async (appointmentId: string, status: string) => {
     setFormError('');
     setFormSuccess('');
@@ -270,6 +343,40 @@ export default function ProviderProfilePage() {
     }
   };
 
+  // NEW: Handle Working Hours Submit
+  const handleWorkingHoursSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    if (!providerData?._id) {
+        setFormError("معلومات مقدم الخدمة غير متوفرة لتحديث ساعات العمل.");
+        return;
+    }
+    try {
+        const formattedData = workingHoursFormData.map(wh => ({
+            day: wh.day,
+            start: wh.start,
+            end: wh.end,
+            isOpen: wh.isOpen
+        }));
+        await updateWorkingHoursMutation.mutateAsync(formattedData);
+        setShowEditWorkingHoursModal(false);
+    } catch (err: any) {
+        setFormError(err.response?.data?.message || 'فشل تحديث ساعات العمل.');
+    }
+  };
+
+  // Handle change for working hours form
+  const handleWorkingHoursChange = (day: IWorkingHours['day'], field: 'open' | 'close' | 'isClosed', value: string | boolean) => {
+    setWorkingHoursFormData(prevHours => 
+        prevHours.map(wh => 
+            wh.day === day ? { ...wh, [field]: value } : wh
+        )
+    );
+  };
+
+
+  // --- Render Logic ---
   if (userLoading || providerLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20">
@@ -420,9 +527,12 @@ export default function ProviderProfilePage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold text-gray-700">ساعات العمل</h2>
             <button
-              // onClick={() => setShowEditWorkingHoursModal(true)} // Implement this modal later
-              className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition opacity-50 cursor-not-allowed"
-              disabled // Disable for now
+              onClick={() => { // Enable the button
+                setFormError('');
+                setFormSuccess('');
+                setShowEditWorkingHoursModal(true);
+              }}
+              className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition"
             >
               تعديل الساعات
             </button>
@@ -432,15 +542,9 @@ export default function ProviderProfilePage() {
               {providerData.workingHours.map((wh, idx) => (
                 <p key={idx} className="flex justify-between items-center">
                   <span className="font-semibold">
-                    {wh.day === 'monday' && 'الاثنين'}
-                    {wh.day === 'tuesday' && 'الثلاثاء'}
-                    {wh.day === 'wednesday' && 'الأربعاء'}
-                    {wh.day === 'thursday' && 'الخميس'}
-                    {wh.day === 'friday' && 'الجمعة'}
-                    {wh.day === 'saturday' && 'السبت'}
-                    {wh.day === 'sunday' && 'الأحد'}
+                    {arabicDays[wh.day]}
                   </span>
-                  <span>{wh.isClosed ? 'مغلق' : `${wh.open} - ${wh.close}`}</span>
+                  <span>{!wh.isOpen ? 'مغلق' : `${wh.start} - ${wh.end}`}</span>
                 </p>
               ))}
             </div>
@@ -544,7 +648,7 @@ export default function ProviderProfilePage() {
                 onChange={(e) => setProviderEditFormData({...providerEditFormData, category: e.target.value})}
                 className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-primary-500 focus:border-primary-500 text-right bg-white"
               >
-                {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                {allCategories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
               </select>
             </div>
             <div>
