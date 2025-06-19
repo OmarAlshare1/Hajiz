@@ -1,5 +1,7 @@
+// Path: server/src/index.ts
+
 import express from 'express';
-import cors from 'cors';
+import cors from 'cors'; // Import cors
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import * as xss from 'xss-clean';
@@ -20,17 +22,37 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// FIX: Handle OPTIONS preflight requests very early in the middleware chain.
+// FIX: Global CORS preflight handler - MUST BE THE FIRST MIDDLEWARE after app creation.
+// This ensures the Access-Control-Allow-Origin header is always sent for OPTIONS requests.
 app.options('*', cors());
 
-// FIX: Tell Express to trust proxy headers for accurate IP detection (Vercel, Nginx, etc.)
-app.set('trust proxy', 1); // Trust the first proxy in the chain
-
 // Body parser - Apply after the global OPTIONS handler
-app.use(express.json());
+app.use(express.json()); // Parses application/json
+app.use(express.urlencoded({ extended: true })); // Parses application/x-www-form-urlencoded
 
-// Enable CORS - General CORS for all other requests (actual GET/POST/PUT etc.)
-app.use(cors());
+// Enable CORS for all actual requests (GET, POST, etc.)
+// The app.options('*', cors()) handles the preflight, this handles actual requests.
+// Make sure your CORS options are consistent.
+app.use(cors({
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.CORS_ORIGIN_FRONTEND || 'http://localhost:3004', // Frontend local dev URL
+      'http://localhost:3000', // Common Next.js dev URL
+      'https://www.hajiz.co.uk', // Deployed frontend domain
+      'https://hajiz-m2xrfwsqp-omars-projects-ce6be162.vercel.app', // Your specific Vercel frontend URL
+      'https://hajiz-tvi6d9b95k-omars-projects-ce6be162.vercel.app', // Another example if you have multiple frontend deployments
+      // Add other specific Vercel preview URLs if needed
+    ];
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // OPTIONS is handled by app.options('*', cors())
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 // Set security headers
 app.use(helmet());
