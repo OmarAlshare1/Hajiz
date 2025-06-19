@@ -1,5 +1,3 @@
-// Path: server/src/routes/auth.routes.ts
-
 import express from 'express';
 import { body } from 'express-validator';
 import { register, login, getProfile, requestPasswordReset, verifyResetCode, resetPassword } from '../controllers/auth.controller';
@@ -25,8 +23,8 @@ const loginValidation = [
 
 // Routes
 router.post('/register', registerValidation, register);
-// FIX: Temporarily remove loginValidation to diagnose the 405 error
-router.post('/login', login); // Changed from router.post('/login', loginValidation, login);
+// FIX: Re-add loginValidation middleware to the login route
+router.post('/login', loginValidation, login); // Corrected line
 router.get('/profile', auth, getProfile);
 router.post('/forgot-password/request', requestPasswordReset);
 router.post('/forgot-password/verify', verifyResetCode);

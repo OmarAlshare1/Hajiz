@@ -1,7 +1,5 @@
-// Path: server/src/index.ts
-
 import express from 'express';
-import cors from 'cors'; // Import cors
+import cors from 'cors';
 import helmet from 'helmet';
 import mongoSanitize from 'express-mongo-sanitize';
 import * as xss from 'xss-clean';
@@ -22,26 +20,36 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// FIX: Global CORS preflight handler - MUST BE THE FIRST MIDDLEWARE after app creation.
-// This ensures the Access-Control-Allow-Origin header is always sent for OPTIONS requests.
-app.options('*', cors());
+// FIX: Implement a manual and explicit CORS preflight handler as the ABSOLUTE FIRST MIDDLEWARE.
+// Ensure all code paths explicitly return or call next().
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', process.env.CORS_ORIGIN_FRONTEND || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200); // Explicitly return
+  }
+  return next(); // FIX: Explicitly return next()
+});
+
+// FIX: Tell Express to trust proxy headers for accurate IP detection (Vercel, Nginx, etc.)
+app.set('trust proxy', 1);
 
 // Body parser - Apply after the global OPTIONS handler
-app.use(express.json()); // Parses application/json
-app.use(express.urlencoded({ extended: true })); // Parses application/x-www-form-urlencoded
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS for all actual requests (GET, POST, etc.)
-// The app.options('*', cors()) handles the preflight, this handles actual requests.
-// Make sure your CORS options are consistent.
+// Enable CORS - General CORS for all other requests (actual GET/POST/PUT etc.)
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = [
-      process.env.CORS_ORIGIN_FRONTEND || 'http://localhost:3004', // Frontend local dev URL
-      'http://localhost:3000', // Common Next.js dev URL
-      'https://www.hajiz.co.uk', // Deployed frontend domain
-      'https://hajiz-m2xrfwsqp-omars-projects-ce6be162.vercel.app', // Your specific Vercel frontend URL
-      'https://hajiz-tvi6d9b95k-omars-projects-ce6be162.vercel.app', // Another example if you have multiple frontend deployments
-      // Add other specific Vercel preview URLs if needed
+      process.env.CORS_ORIGIN_FRONTEND || 'http://localhost:3004',
+      'http://localhost:3000',
+      'https://www.hajiz.co.uk',
+      'https://hajiz-m2xrfwsqp-omars-projects-ce6be162.vercel.app',
     ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -49,7 +57,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // OPTIONS is handled by app.options('*', cors())
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -78,7 +86,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz')
   .then(() => console.log('MongoDB Connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// Register your API Routes - Apply after all general middleware
+// Register your API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/appointments', appointmentRoutes);
@@ -90,7 +98,7 @@ app.get('/', (_req, res) => {
   return;
 });
 
-// Error handling middleware - This must be the last middleware
+// Error handling middleware
 app.use((err: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(500).json({
