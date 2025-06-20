@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth'; // Assuming this hook provides the register functionality
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CustomSelect from '../../../components/CustomSelect'; // Import CustomSelect
@@ -30,69 +30,76 @@ export default function RegisterProviderPage() {
     businessName: '',
     category: '', // This will be managed by CustomSelect now
   });
-  const [error, setError] = useState('');
-  const { register } = useAuth(); // register from useAuth is mutateAsync
-  const router = useRouter();
+  const [error, setError] = useState(''); // State to manage registration error messages
+  const [isLoading, setIsLoading] = useState(false); // State to manage loading indicator for button
 
-  const [isLoading, setIsLoading] = useState(false); // New loading state
+  const { register } = useAuth(); // Destructuring the register function from your authentication hook
+  const router = useRouter(); // Next.js router for navigation
 
+  // Handles the form submission for service provider registration
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(''); // Clear previous errors
-    setIsLoading(true); // Start loading
+    e.preventDefault(); // Prevent default form submission behavior
+    setError('');       // Clear any previous error messages
+    setIsLoading(true); // Set loading state to true, disabling the button
 
     try {
+      // Attempt to register the new service provider
       await register({
         ...formData,
-        role: 'provider', // Ensure role is set for provider registration
+        role: 'provider', // Explicitly setting the role for provider registration
       });
-      // On success, redirection to /home is handled by useAuth hook
+      // On successful registration, redirect to a relevant page (e.g., login or provider dashboard)
+      router.push('/auth/login?registrationSuccess=true'); // Example redirection
     } catch (err: any) {
+      // If registration fails, display the error message from the API, or a generic one
       setError(err.response?.data?.message || 'فشل إنشاء الحساب. يرجى المحاولة مرة أخرى.');
     } finally {
-      setIsLoading(false); // Stop loading
+      setIsLoading(false); // Reset loading state, re-enabling the button
     }
   };
 
-  // handleChange now specifically for input fields
+  // Handles changes for standard input fields
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData(prevFormData => ({
+      ...prevFormData,
+      [name]: value,
+    }));
   };
 
-  // handleCategoryChange specifically for CustomSelect
+  // Handles changes for the CustomSelect component
   const handleCategoryChange = (value: string | number) => {
-    setFormData({
-      ...formData,
+    setFormData(prevFormData => ({
+      ...prevFormData,
       category: value as string, // Cast to string as category is string
-    });
+    }));
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50 pt-24">
-      <div className="max-w-md w-full space-y-8 bg-white rounded-lg shadow-xl p-8 border-t-4 border-primary-600">
+    <div className="min-h-screen flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8 bg-gray-100 font-inter">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-6 sm:p-8 space-y-6 border-t-4 border-teal-600">
         <div className="flex flex-col items-center">
-          <img className="h-24 w-auto mb-4" src="/hajiz logo.jpeg" alt="Hajiz" />
-          <h2 className="text-center text-3xl font-extrabold text-gray-900">
+          {/* Responsive logo */}
+          <img className="h-16 sm:h-20 w-auto mb-4 rounded-full shadow-md" src="/hajiz logo.jpeg" alt="Hajiz" />
+          <h2 className="text-center text-2xl sm:text-3xl font-extrabold text-gray-900">
             إنشاء حساب كمقدم خدمة
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm sm:text-base text-gray-600">
             سجل الآن لعرض خدماتك للعملاء!
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
+        {/* Display error message if present */}
+        {error && (
+          <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg relative text-sm sm:text-base" role="alert">
+            <span className="block text-right">{error}</span>
+          </div>
+        )}
 
-          <div className="rounded-md shadow-sm -space-y-px">
-            {/* Personal Details */}
-            <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-4 text-right">معلومات الحساب الشخصي</h3>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          {/* Section: Personal Details */}
+          <div className="space-y-4"> {/* Added space-y for internal section spacing */}
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 text-right pb-2 border-b border-gray-200">معلومات الحساب الشخصي</h3>
             <div>
               <label htmlFor="name" className="sr-only">الاسم الكامل</label>
               <input
@@ -100,10 +107,10 @@ export default function RegisterProviderPage() {
                 name="name"
                 type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm"
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm text-base"
                 placeholder="الاسم الكامل"
                 value={formData.name}
-                onChange={handleInputChange} // Use handleInputChange
+                onChange={handleInputChange}
               />
             </div>
             <div>
@@ -113,10 +120,11 @@ export default function RegisterProviderPage() {
                 name="email"
                 type="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm"
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm text-base"
                 placeholder="البريد الإلكتروني"
                 value={formData.email}
-                onChange={handleInputChange} // Use handleInputChange
+                onChange={handleInputChange}
+                dir="ltr"
               />
             </div>
             <div>
@@ -126,16 +134,18 @@ export default function RegisterProviderPage() {
                 name="phone"
                 type="tel"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm"
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm text-base"
                 placeholder="رقم الهاتف (مثال: 09XXXXXXXX)"
                 value={formData.phone}
-                onChange={handleInputChange} // Use handleInputChange
+                onChange={handleInputChange}
                 dir="ltr"
               />
             </div>
+          </div>
 
-            {/* Business Details */}
-            <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6 pt-4 border-t border-gray-200 text-right">معلومات العمل</h3>
+          {/* Section: Business Details */}
+          <div className="space-y-4 pt-4 border-t border-gray-200"> {/* Added space-y for internal spacing, border-t for visual separation */}
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 text-right pb-2 border-b border-gray-200">معلومات العمل</h3>
             <div>
               <label htmlFor="businessName" className="sr-only">اسم العمل</label>
               <input
@@ -143,26 +153,31 @@ export default function RegisterProviderPage() {
                 name="businessName"
                 type="text"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm"
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm text-base"
                 placeholder="اسم العمل (مثل: صالون الأمل، مطعم الوردة)"
                 value={formData.businessName}
-                onChange={handleInputChange} // Use handleInputChange
+                onChange={handleInputChange}
               />
             </div>
             <div>
-              {/* Using CustomSelect for Category */}
+              {/* CustomSelect for Category */}
               <CustomSelect
-                label="فئة الخدمة" // Label passed to CustomSelect
+                label="فئة الخدمة" // Label for accessibility and display
                 options={providerCategories}
                 value={formData.category}
-                onChange={handleCategoryChange} // Use handleCategoryChange
-                className="w-full" // Pass full width class
-                placeholder="اختر الفئة" // Placeholder
+                onChange={handleCategoryChange}
+                // Pass styling props that CustomSelect can use to match theme
+                className="w-full"
+                containerClasses="rounded-md shadow-sm border border-gray-300 focus-within:ring-teal-500 focus-within:border-teal-500" // Example of how to pass styling for the select container
+                selectClasses="py-3 px-3 text-base text-gray-900 focus:outline-none" // Example for the actual select element
+                placeholder="اختر الفئة"
               />
             </div>
+          </div>
 
-            {/* Password */}
-            <h3 className="text-lg font-semibold text-gray-700 mb-2 mt-6 pt-4 border-t border-gray-200 text-right">معلومات تسجيل الدخول</h3>
+          {/* Section: Login Information */}
+          <div className="space-y-4 pt-4 border-t border-gray-200"> {/* Added space-y for internal spacing, border-t for visual separation */}
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-800 text-right pb-2 border-b border-gray-200">معلومات تسجيل الدخول</h3>
             <div>
               <label htmlFor="password" className="sr-only">كلمة المرور</label>
               <input
@@ -170,30 +185,33 @@ export default function RegisterProviderPage() {
                 name="password"
                 type="password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-600 focus:border-primary-600 focus:z-10 sm:text-sm"
+                minLength={8} // Enforce minimum password length for security
+                className="appearance-none block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm text-base"
                 placeholder="كلمة المرور (8 أحرف على الأقل)"
                 value={formData.password}
-                onChange={handleInputChange} // Use handleInputChange
+                onChange={handleInputChange}
               />
             </div>
           </div>
 
+          {/* Submit Button */}
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={isLoading} // Disable button while loading
             >
               {isLoading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
             </button>
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
+          {/* Existing Account Link */}
+          <div className="text-center pt-4"> {/* Added pt-4 for spacing */}
+            <p className="text-sm sm:text-base text-gray-600">
               لديك حساب بالفعل؟{' '}
               <Link
                 href="/auth/login"
-                className="font-medium text-primary-600 hover:text-primary-800"
+                className="font-medium text-teal-600 hover:text-teal-800 transition duration-150 ease-in-out"
               >
                 تسجيل الدخول
               </Link>

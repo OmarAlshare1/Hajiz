@@ -1,43 +1,57 @@
 'use client';
 import React, { useEffect } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../hooks/useAuth'; // Assuming useAuth hook path is correct
 import { useRouter } from 'next/navigation';
 
 export default function LoadingPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth(); // Added isAuthenticated for more explicit checks
   const router = useRouter();
 
   useEffect(() => {
-    // FIX: Redirect immediately once user data is loaded and available
-    // No fixed setTimeout, for better responsiveness
-    if (!isLoading && user) {
-      router.push('/home');
+    // Only redirect if authentication loading is complete
+    if (!isLoading) {
+      if (user) {
+        // User is authenticated and data is loaded, redirect to home
+        router.push('/home');
+      } else {
+        // User is not authenticated AND loading is complete.
+        // Check if a token exists locally, which might indicate a stale/invalid session.
+        // If a token exists but no user object, clear it and redirect to login for re-authentication.
+        if (typeof window !== 'undefined' && localStorage.getItem('token')) {
+          localStorage.removeItem('token'); // Clear potentially bad token
+          router.push('/auth/login?sessionExpired=true'); // Redirect to login with a flag
+        } else {
+          // No user and no token, or user explicitly logged out (handled elsewhere),
+          // ensure they are on the login page or equivalent.
+          router.push('/auth/login');
+        }
+      }
     }
-    // Also, if the user somehow becomes null/unauthenticated, redirect them away from loading page
-    if (!isLoading && !user && typeof window !== 'undefined' && localStorage.getItem('token')) {
-        // If localStorage has a token but user is null after loading, something is wrong with token/session
-        // or user role check failed; redirect to login for re-authentication.
-        localStorage.removeItem('token'); // Clear potentially bad token
-        router.push('/auth/login');
-    }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isAuthenticated, router]); // Added isAuthenticated to dependency array
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 pt-20">
-      <div className="flex flex-col items-center p-8 bg-white rounded-lg shadow-md border-t-4 border-primary-600"> {/* Added styling */}
-        <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-primary-600 mb-6"></div> {/* Larger, bolder spinner */}
-        <h2 className="text-3xl font-bold text-gray-800 mb-3">جاري تجهيز حسابك...</h2> {/* Stronger message */}
-        {user ? ( // Display user info only if available
-          <p className="text-lg text-gray-700 mt-2 text-center">
-            مرحباً بك، <span className="font-semibold text-primary-700">{user.name}</span>!
-            أنت الآن مسجل كـ <span className="font-semibold text-primary-700">{user.role === 'provider' ? 'مقدم خدمة' : 'عميل'}</span>.
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 font-inter p-4 sm:p-6">
+      <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-2xl border-t-4 border-blue-600 max-w-sm w-full text-center">
+        {/* Modern, larger spinner */}
+        <div className="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-blue-500 mb-6 border-opacity-75"></div>
+
+        {/* Stronger, responsive message */}
+        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
+          جاري تجهيز حسابك...
+        </h2>
+
+        {/* Dynamic welcome message */}
+        {user ? (
+          <p className="text-md sm:text-lg text-gray-700 mt-2">
+            مرحباً بك، <span className="font-semibold text-blue-700">{user.name}</span>!
+            <br />
+            أنت الآن مسجل كـ <span className="font-semibold text-blue-700">{user.role === 'provider' ? 'مقدم خدمة' : 'عميل'}</span>.
           </p>
         ) : (
-          <p className="text-lg text-gray-700 mt-2 text-center">
-            لحظات من فضلك...
+          <p className="text-md sm:text-lg text-gray-700 mt-2">
+            لحظات من فضلك... يتم تحميل البيانات.
           </p>
         )}
-        {/* Optional: Add a simple progress bar or more details here later */}
       </div>
     </div>
   );

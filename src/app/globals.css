@@ -2,4 +2,156 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Your custom styles below */
+/* Custom styles for animations and third-party components */
+
+/* Font smoothing for better text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------- */
+/* Custom Keyframe Animations (for elements using animate-*) */
+/* ------------------------------------- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Tailwind custom animation utility classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.6s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.animate-fade-in-scale {
+  animation: fadeInScale 0.3s ease-out forwards;
+}
+
+/* ------------------------------------- */
+/* React-Calendar Overrides for Tailwind Consistency */
+/* ------------------------------------- */
+
+/* Base calendar container */
+.react-calendar {
+  width: 100% !important; /* Ensure it takes full width of its container */
+  max-width: 100% !important; /* Prevent it from overflowing on small screens */
+  background-color: #fff;
+  border: 1px solid #e5e7eb; /* gray-200 */
+  border-radius: 0.75rem; /* rounded-xl */
+  font-family: inherit; /* Inherit font from body */
+  line-height: 1.125em;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+  padding: 1rem; /* p-4 */
+}
+
+/* Navigation buttons (arrows, year/month selectors) */
+.react-calendar__navigation button {
+  min-width: 44px; /* Ensure sufficient tap target */
+  background: none;
+  border-radius: 0.5rem; /* rounded-md */
+  transition: background-color 0.15s ease-in-out;
+}
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background-color: #f3f4f6; /* gray-100 */
+}
+.react-calendar__navigation button[disabled] {
+  background-color: transparent;
+  color: #d1d5db; /* gray-400 */
+}
+.react-calendar__navigation__label {
+  font-weight: 600; /* font-semibold */
+  color: #1f2937; /* gray-800 */
+}
+.react-calendar__navigation__arrow {
+  color: #4b5563; /* gray-600 */
+}
+
+/* Weekday abbreviations (Sun, Mon, etc.) */
+.react-calendar__month-view__weekdays__weekday {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 0.75rem; /* text-xs */
+  font-weight: 500; /* font-medium */
+  padding: 0.5em;
+  color: #6b7280; /* gray-500 */
+  abbr { /* Hide default abbreviations for better display */
+    text-decoration: none;
+    font-weight: 600;
+  }
+}
+
+/* Day tiles */
+.react-calendar__tile {
+  max-width: 100%;
+  padding: 0.75em 0.5em; /* Adjust padding for tap target */
+  background: none;
+  border-radius: 0.5rem; /* rounded-md */
+  transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+  text-align: center;
+  line-height: 1.2;
+}
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: #e5e7eb; /* gray-200 */
+  color: #1f2937; /* gray-800 */
+}
+/* Active day */
+.react-calendar__tile--active {
+  background-color: #3b82f6 !important; /* blue-500 */
+  color: #fff !important;
+  border-radius: 0.5rem;
+}
+.react-calendar__tile--active:enabled:hover,
+.react-calendar__tile--active:enabled:focus {
+  background-color: #2563eb !important; /* blue-600 */
+}
+
+/* Current day */
+.react-calendar__tile--now {
+  background-color: #dbeafe; /* blue-100 */
+  color: #1f2937; /* gray-800 */
+  border-radius: 0.5rem;
+}
+.react-calendar__tile--now:enabled:hover,
+.react-calendar__tile--now:enabled:focus {
+  background-color: #bfdbfe; /* blue-200 */
+}
+
+/* Tile states for different views (year, decade, century) */
+.react-calendar__year-view__months__month,
+.react-calendar__decade-view__years__year,
+.react-calendar__century-view__decades__decade {
+  padding: 1em 0.5em;
+  border-radius: 0.5rem;
+}
+.react-calendar__month-view__days__day--weekend {
+  color: #ef4444; /* red-500 */
+}
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: #9ca3af; /* gray-400 */
+}
