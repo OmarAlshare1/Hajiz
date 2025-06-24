@@ -49,10 +49,12 @@ app.use(cors({
 
       // Your Deployed Frontend Domains
       'https://www.hajiz.co.uk', // Your primary deployed domain
-      'https://hajiz-tvi6d9b95k-omars-projects-ce6be162.vercel.app', // An existing Vercel frontend URL
-      'https://hajiz-ann7xz4y5-omars-projects-ce6be162.vercel.app', // Another existing Vercel frontend URL
-
-      // FIX: Add the specific Vercel frontend URL that was causing the CORS error
+      'https://hajiz-tvi6d9b95k-omars-projects-ce6be162.vercel.app',
+      'https://hajiz-ann7xz4y5-omars-projects-ce6be162.vercel.app',
+      'https://hajiz-rodkamoat-omars-projects-ce6be162.vercel.app',
+      'https://hajiz-zhuchpy7s-omars-projects-ce6be162.vercel.app',
+      'https://hajiz-cynj3bkic-omars-projects-ce6be162.vercel.app',
+      'https://hajiz-4aw0jgmst-omars-projects-ce6be162.vercel.app',
       'https://krrwf4d-next-js-projects-online-n2.vercel.app',
       
       // Ensure process.env.CORS_ORIGIN_FRONTEND is also included if it's set in your .env
