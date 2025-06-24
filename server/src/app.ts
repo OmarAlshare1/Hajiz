@@ -32,6 +32,9 @@ dotenv.config();
 // Create Express app instance
 const app = express();
 
+// Configure trust proxy for Vercel deployment
+app.set('trust proxy', 1);
+
 // --- Security Middleware (Apply these early in the middleware chain) ---
 
 // Helmet helps secure Express apps by setting various HTTP headers
@@ -55,6 +58,7 @@ app.use(cors({
       'https://hajiz-zhuchpy7s-omars-projects-ce6be162.vercel.app',
       'https://hajiz-cynj3bkic-omars-projects-ce6be162.vercel.app',
       'https://hajiz-4aw0jgmst-omars-projects-ce6be162.vercel.app',
+      'https://hajiz-8ul6j0qqo-omars-projects-ce6be162.vercel.app',
       'https://krrwf4d-next-js-projects-online-n2.vercel.app',
       
       // Ensure process.env.CORS_ORIGIN_FRONTEND is also included if it's set in your .env
