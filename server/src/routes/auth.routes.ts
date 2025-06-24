@@ -13,7 +13,10 @@ const registerValidation = [
     .isLength({ min: 6 })
     .withMessage('Password must be at least 6 characters long'),
   body('email').optional().isEmail().withMessage('Invalid email format'),
-  body('role').optional().isIn(['customer', 'provider']).withMessage('Invalid role')
+  body('role').optional().isIn(['customer', 'provider']).withMessage('Invalid role'),
+  // Provider-specific fields (optional, but required if role is provider)
+  body('businessName').optional().trim().notEmpty().withMessage('Business name is required for providers'),
+  body('category').optional().trim().notEmpty().withMessage('Category is required for providers')
 ];
 
 const loginValidation = [

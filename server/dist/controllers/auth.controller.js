@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.resetPassword = exports.verifyResetCode = exports.requestPasswordReset = exports.updateProfile = exports.getProfile = exports.login = exports.register = void 0;
 const User_1 = require("../models/User");
+const ServiceProvider_1 = require("../models/ServiceProvider");
 const auth_1 = require("../middleware/auth");
 const express_validator_1 = require("express-validator");
 const notification_service_1 = require("../services/notification.service");
@@ -11,7 +12,7 @@ const register = async (req, res) => {
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
-        const { name, phone, email, password, role } = req.body;
+        const { name, phone, email, password, role, businessName, category } = req.body;
         const existingUser = await User_1.User.findOne({ phone });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
@@ -24,6 +25,30 @@ const register = async (req, res) => {
             role: role || 'customer'
         });
         await user.save();
+        if (role === 'provider' && businessName && category) {
+            const provider = new ServiceProvider_1.ServiceProvider({
+                userId: user._id,
+                businessName,
+                category,
+                description: `${businessName} - ${category}`,
+                location: {
+                    type: 'Point',
+                    coordinates: [36.2021, 37.1343],
+                    address: 'سوريا'
+                },
+                services: [],
+                workingHours: [
+                    { day: 'sunday', open: '09:00', close: '17:00', isClosed: false },
+                    { day: 'monday', open: '09:00', close: '17:00', isClosed: false },
+                    { day: 'tuesday', open: '09:00', close: '17:00', isClosed: false },
+                    { day: 'wednesday', open: '09:00', close: '17:00', isClosed: false },
+                    { day: 'thursday', open: '09:00', close: '17:00', isClosed: false },
+                    { day: 'friday', open: '09:00', close: '17:00', isClosed: true },
+                    { day: 'saturday', open: '09:00', close: '17:00', isClosed: false }
+                ]
+            });
+            await provider.save();
+        }
         const token = (0, auth_1.generateToken)(user._id.toString());
         res.status(201).json({
             message: 'User registered successfully',
@@ -149,7 +174,7 @@ const requestPasswordReset = async (req, res) => {
         user.resetCode = code;
         user.resetCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
         await user.save();
-        await (0, notification_service_1.sendSMS)(phone, `Your verification code is: ${code}`);
+        await notification_service_1.notificationService.sendSMS(phone, `Your verification code is: ${code}`);
         res.json({ message: 'Reset code sent successfully' });
     }
     catch (error) {

@@ -4,7 +4,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.notificationService = exports.NotificationType = void 0;
-exports.sendSMS = sendSMS;
 const twilio_1 = __importDefault(require("twilio"));
 var NotificationType;
 (function (NotificationType) {
@@ -14,22 +13,42 @@ var NotificationType;
     NotificationType["APPOINTMENT_REMINDER"] = "APPOINTMENT_REMINDER";
     NotificationType["NEW_REVIEW"] = "NEW_REVIEW";
 })(NotificationType || (exports.NotificationType = NotificationType = {}));
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const from = process.env.TWILIO_PHONE_NUMBER;
-const client = (0, twilio_1.default)(accountSid, authToken);
-async function sendSMS(to, body) {
-    if (!accountSid || !authToken || !from)
-        throw new Error('Twilio credentials not set');
-    return client.messages.create({
-        body,
-        from,
-        to
-    });
-}
 class NotificationService {
-    async sendSMS(phone, message) {
-        console.log(`SMS to ${phone}: ${message}`);
+    constructor() {
+        this.twilioClient = null;
+    }
+    getTwilioClient() {
+        if (this.twilioClient) {
+            return this.twilioClient;
+        }
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
+        if (!accountSid || !authToken) {
+            console.error('Twilio credentials (Account SID or Auth Token) are not set. Cannot initialize Twilio client.');
+            throw new Error('Twilio credentials missing.');
+        }
+        this.twilioClient = (0, twilio_1.default)(accountSid, authToken);
+        return this.twilioClient;
+    }
+    async sendSMS(to, message) {
+        const from = process.env.TWILIO_PHONE_NUMBER;
+        if (!from) {
+            console.error('Twilio Phone Number is not set. Cannot send SMS.');
+            throw new Error('Twilio Phone Number missing.');
+        }
+        try {
+            const client = this.getTwilioClient();
+            await client.messages.create({
+                body: message,
+                from: from,
+                to: to
+            });
+            console.log(`SMS sent to ${to}: ${message}`);
+        }
+        catch (error) {
+            console.error(`Error sending SMS to ${to}:`, error.message);
+            throw error;
+        }
     }
     async sendEmail(email, subject, message) {
         console.log(`Email to ${email}: ${subject} - ${message}`);

@@ -38,6 +38,39 @@ export const createAppointment = async (req: Request, res: Response) => {
     if (existingAppointment) {
       return res.status(400).json({ message: 'This time slot is already booked' });
     }
+    
+    // Check if the provider is available on this date (based on availability exceptions)
+    const appointmentDate = new Date(dateTime);
+    const appointmentDateString = appointmentDate.toISOString().split('T')[0];
+    
+    // Check for availability exceptions
+    const availabilityException = provider.availabilityExceptions.find(
+      exception => new Date(exception.date).toISOString().split('T')[0] === appointmentDateString
+    );
+    
+    if (availabilityException && !availabilityException.isAvailable) {
+      return res.status(400).json({ message: 'Provider is not available on this date' });
+    }
+    
+    // Check if the appointment time is within working hours or custom hours for that day
+    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][appointmentDate.getDay()];
+    const appointmentTime = appointmentDate.toTimeString().substring(0, 5); // HH:MM format
+    
+    // If there's a custom hours exception for this date, use that instead of regular working hours
+    if (availabilityException && availabilityException.customHours) {
+      const { open, close } = availabilityException.customHours;
+      if (open && close && (appointmentTime < open || appointmentTime > close)) {
+        return res.status(400).json({ message: 'Appointment time is outside of available hours for this date' });
+      }
+    } else {
+      // Use regular working hours
+      const workingHoursForDay = provider.workingHours.find(wh => wh.day === dayOfWeek);
+      
+      if (!workingHoursForDay || workingHoursForDay.isClosed || 
+          (appointmentTime < workingHoursForDay.open || appointmentTime > workingHoursForDay.close)) {
+        return res.status(400).json({ message: 'Appointment time is outside of provider\'s working hours' });
+      }
+    }
 
     // Create appointment
     const appointment = new Appointment({
@@ -225,4 +258,4 @@ export const addReview = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
   return;
-}; 
+};

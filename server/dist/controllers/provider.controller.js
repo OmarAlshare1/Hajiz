@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateWorkingHours = exports.deleteService = exports.updateService = exports.addService = exports.getAllProviders = exports.getProviderById = exports.searchProviders = exports.updateProvider = exports.getProvider = exports.createProvider = void 0;
+exports.getAvailabilityExceptions = exports.deleteAvailabilityException = exports.addAvailabilityException = exports.updateWorkingHours = exports.deleteService = exports.updateService = exports.addService = exports.getAllProviders = exports.getProviderById = exports.searchProviders = exports.updateProvider = exports.getProvider = exports.createProvider = void 0;
 const ServiceProvider_1 = require("../models/ServiceProvider");
 const express_validator_1 = require("express-validator");
 const User_1 = require("../models/User");
@@ -288,4 +288,79 @@ const updateWorkingHours = async (req, res) => {
     return;
 };
 exports.updateWorkingHours = updateWorkingHours;
+const addAvailabilityException = async (req, res) => {
+    var _a;
+    try {
+        const errors = (0, express_validator_1.validationResult)(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+        const { date, isAvailable, customHours } = req.body;
+        const provider = await ServiceProvider_1.ServiceProvider.findOne({ userId: (_a = req.user) === null || _a === void 0 ? void 0 : _a._id });
+        if (!provider) {
+            return res.status(404).json({ message: 'Provider profile not found' });
+        }
+        const existingExceptionIndex = provider.availabilityExceptions.findIndex(exception => new Date(exception.date).toDateString() === new Date(date).toDateString());
+        if (existingExceptionIndex !== -1) {
+            provider.availabilityExceptions[existingExceptionIndex] = Object.assign(Object.assign({}, provider.availabilityExceptions[existingExceptionIndex]), { isAvailable,
+                customHours });
+        }
+        else {
+            provider.availabilityExceptions.push({
+                date: new Date(date),
+                isAvailable,
+                customHours
+            });
+        }
+        await provider.save();
+        res.json({
+            message: 'Availability exception added successfully',
+            availabilityExceptions: provider.availabilityExceptions
+        });
+    }
+    catch (error) {
+        console.error('Add availability exception error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+    return;
+};
+exports.addAvailabilityException = addAvailabilityException;
+const deleteAvailabilityException = async (req, res) => {
+    var _a;
+    try {
+        const { exceptionId } = req.params;
+        const provider = await ServiceProvider_1.ServiceProvider.findOne({ userId: (_a = req.user) === null || _a === void 0 ? void 0 : _a._id });
+        if (!provider) {
+            return res.status(404).json({ message: 'Provider profile not found' });
+        }
+        provider.availabilityExceptions = provider.availabilityExceptions.filter(exception => exception._id.toString() !== exceptionId);
+        await provider.save();
+        res.json({
+            message: 'Availability exception deleted successfully',
+            availabilityExceptions: provider.availabilityExceptions
+        });
+    }
+    catch (error) {
+        console.error('Delete availability exception error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+    return;
+};
+exports.deleteAvailabilityException = deleteAvailabilityException;
+const getAvailabilityExceptions = async (req, res) => {
+    var _a;
+    try {
+        const provider = await ServiceProvider_1.ServiceProvider.findOne({ userId: (_a = req.user) === null || _a === void 0 ? void 0 : _a._id });
+        if (!provider) {
+            return res.status(404).json({ message: 'Provider profile not found' });
+        }
+        res.json(provider.availabilityExceptions);
+    }
+    catch (error) {
+        console.error('Get availability exceptions error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+    return;
+};
+exports.getAvailabilityExceptions = getAvailabilityExceptions;
 //# sourceMappingURL=provider.controller.js.map

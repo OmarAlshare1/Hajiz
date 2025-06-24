@@ -15,10 +15,20 @@ export interface IService {
 }
 
 export interface IWorkingHours {
-  day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  open: string; // HH:mm format
-  close: string; // HH:mm format
+  day: string;
+  open: string;
+  close: string;
   isClosed: boolean;
+}
+
+export interface IAvailabilityException {
+  _id?: Types.ObjectId;
+  date: Date;           // The specific date for the exception
+  isAvailable: boolean; // Whether the provider is available on this date
+  customHours?: {      // Optional custom hours for this date
+    open?: string;     // HH:mm format
+    close?: string;    // HH:mm format
+  };
 }
 
 export interface IServiceProvider extends Document {
@@ -29,6 +39,7 @@ export interface IServiceProvider extends Document {
   location: ILocation;
   services: IService[];
   workingHours: IWorkingHours[];
+  availabilityExceptions: IAvailabilityException[];
   rating: number;
   totalRatings: number;
   isVerified: boolean;
@@ -107,6 +118,26 @@ const serviceProviderSchema = new Schema<IServiceProvider>({
       default: false
     }
   }],
+  availabilityExceptions: [{
+    date: {
+      type: Date,
+      required: true
+    },
+    isAvailable: {
+      type: Boolean,
+      required: true
+    },
+    customHours: {
+      open: {
+        type: String,
+        match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+      },
+      close: {
+        type: String,
+        match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+      }
+    }
+  }],
   rating: {
     type: Number,
     default: 0,
@@ -139,4 +170,4 @@ serviceProviderSchema.index({
   'services.name': 'text'
 });
 
-export const ServiceProvider = mongoose.model<IServiceProvider>('ServiceProvider', serviceProviderSchema); 
+export const ServiceProvider = mongoose.model<IServiceProvider>('ServiceProvider', serviceProviderSchema);

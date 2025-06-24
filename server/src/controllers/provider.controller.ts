@@ -322,4 +322,94 @@ export const updateWorkingHours = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
   return;
-}; 
+};
+
+export const addAvailabilityException = async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { date, isAvailable, customHours } = req.body;
+
+    const provider = await ServiceProvider.findOne({ userId: req.user?._id });
+    if (!provider) {
+      return res.status(404).json({ message: 'Provider profile not found' });
+    }
+
+    // Check if an exception already exists for this date
+    const existingExceptionIndex = provider.availabilityExceptions.findIndex(
+      exception => new Date(exception.date).toDateString() === new Date(date).toDateString()
+    );
+
+    if (existingExceptionIndex !== -1) {
+      // Update existing exception
+      provider.availabilityExceptions[existingExceptionIndex] = {
+        ...provider.availabilityExceptions[existingExceptionIndex],
+        isAvailable,
+        customHours
+      };
+    } else {
+      // Add new exception
+      provider.availabilityExceptions.push({
+        date: new Date(date),
+        isAvailable,
+        customHours
+      });
+    }
+
+    await provider.save();
+
+    res.json({
+      message: 'Availability exception added successfully',
+      availabilityExceptions: provider.availabilityExceptions
+    });
+  } catch (error) {
+    console.error('Add availability exception error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+  return;
+};
+
+export const deleteAvailabilityException = async (req: Request, res: Response) => {
+  try {
+    const { exceptionId } = req.params;
+
+    const provider = await ServiceProvider.findOne({ userId: req.user?._id });
+    if (!provider) {
+      return res.status(404).json({ message: 'Provider profile not found' });
+    }
+
+    // Remove the exception with the given ID
+    provider.availabilityExceptions = provider.availabilityExceptions.filter(
+      exception => exception._id!.toString() !== exceptionId
+    );
+
+    await provider.save();
+
+    res.json({
+      message: 'Availability exception deleted successfully',
+      availabilityExceptions: provider.availabilityExceptions
+    });
+  } catch (error) {
+    console.error('Delete availability exception error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+  return;
+};
+
+export const getAvailabilityExceptions = async (req: Request, res: Response) => {
+  try {
+    const provider = await ServiceProvider.findOne({ userId: req.user?._id });
+    if (!provider) {
+      return res.status(404).json({ message: 'Provider profile not found' });
+    }
+
+    res.json(provider.availabilityExceptions);
+  } catch (error) {
+    console.error('Get availability exceptions error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+  return;
+};

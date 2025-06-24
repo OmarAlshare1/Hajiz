@@ -28,6 +28,27 @@ const createAppointment = async (req, res) => {
         if (existingAppointment) {
             return res.status(400).json({ message: 'This time slot is already booked' });
         }
+        const appointmentDate = new Date(dateTime);
+        const appointmentDateString = appointmentDate.toISOString().split('T')[0];
+        const availabilityException = provider.availabilityExceptions.find(exception => new Date(exception.date).toISOString().split('T')[0] === appointmentDateString);
+        if (availabilityException && !availabilityException.isAvailable) {
+            return res.status(400).json({ message: 'Provider is not available on this date' });
+        }
+        const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][appointmentDate.getDay()];
+        const appointmentTime = appointmentDate.toTimeString().substring(0, 5);
+        if (availabilityException && availabilityException.customHours) {
+            const { open, close } = availabilityException.customHours;
+            if (open && close && (appointmentTime < open || appointmentTime > close)) {
+                return res.status(400).json({ message: 'Appointment time is outside of available hours for this date' });
+            }
+        }
+        else {
+            const workingHoursForDay = provider.workingHours.find(wh => wh.day === dayOfWeek);
+            if (!workingHoursForDay || workingHoursForDay.isClosed ||
+                (appointmentTime < workingHoursForDay.open || appointmentTime > workingHoursForDay.close)) {
+                return res.status(400).json({ message: 'Appointment time is outside of provider\'s working hours' });
+            }
+        }
         const appointment = new Appointment_1.Appointment({
             customer: (_a = req.user) === null || _a === void 0 ? void 0 : _a._id,
             serviceProvider: serviceProviderId,

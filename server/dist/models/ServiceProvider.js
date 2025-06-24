@@ -107,6 +107,26 @@ const serviceProviderSchema = new mongoose_1.Schema({
                 default: false
             }
         }],
+    availabilityExceptions: [{
+            date: {
+                type: Date,
+                required: true
+            },
+            isAvailable: {
+                type: Boolean,
+                required: true
+            },
+            customHours: {
+                open: {
+                    type: String,
+                    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+                },
+                close: {
+                    type: String,
+                    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+                }
+            }
+        }],
     rating: {
         type: Number,
         default: 0,

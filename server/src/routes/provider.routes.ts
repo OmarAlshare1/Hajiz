@@ -1,19 +1,23 @@
-import express from 'express';
+import { Router } from 'express';
 import { body } from 'express-validator';
-import { auth, isProvider } from '../middleware/auth';
 import {
   createProvider,
-  updateProvider,
   getProvider,
-  getProviderById,
+  updateProvider,
   getAllProviders,
+  getProviderById,
   addService,
   updateService,
   deleteService,
-  updateWorkingHours
+  updateWorkingHours,
+  addAvailabilityException,
+  deleteAvailabilityException,
+  getAvailabilityExceptions
 } from '../controllers/provider.controller';
+import { auth } from '../middleware/auth';
+import { isProvider } from '../middleware/isProvider';
 
-const router = express.Router();
+const router = Router();
 
 // Validation middleware
 const providerValidation = [
@@ -53,12 +57,24 @@ const workingHoursValidation = [
     .withMessage('Close time must be in HH:mm format')
 ];
 
+const availabilityExceptionValidation = [
+  body('date').isISO8601().withMessage('Date must be in ISO format'),
+  body('isAvailable').isBoolean().withMessage('isAvailable must be a boolean'),
+  body('customHours').optional(),
+  body('customHours.open').optional().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage('Open time must be in HH:mm format'),
+  body('customHours.close').optional().matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage('Close time must be in HH:mm format')
+];
+
 // Provider profile routes
 router.post('/', auth, isProvider, providerValidation, createProvider);
 router.put('/', auth, isProvider, providerValidation, updateProvider);
 router.get('/profile', auth, isProvider, getProvider);
-router.get('/:id', getProviderById);
 router.get('/', getAllProviders);
+
+// Get provider by ID - moved below specific routes to avoid conflicts
+router.get('/:id', getProviderById);
 
 // Service management routes
 router.post('/services', auth, isProvider, serviceValidation, addService);
@@ -68,4 +84,9 @@ router.delete('/services/:serviceId', auth, isProvider, deleteService);
 // Working hours route
 router.put('/working-hours', auth, isProvider, workingHoursValidation, updateWorkingHours);
 
-export default router; 
+// Availability exceptions routes
+router.post('/availability-exceptions', auth, isProvider, availabilityExceptionValidation, addAvailabilityException);
+router.delete('/availability-exceptions/:exceptionId', auth, isProvider, deleteAvailabilityException);
+router.get('/availability-exceptions', auth, isProvider, getAvailabilityExceptions);
+
+export default router;

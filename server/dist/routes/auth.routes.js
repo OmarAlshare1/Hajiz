@@ -15,7 +15,9 @@ const registerValidation = [
         .isLength({ min: 6 })
         .withMessage('Password must be at least 6 characters long'),
     (0, express_validator_1.body)('email').optional().isEmail().withMessage('Invalid email format'),
-    (0, express_validator_1.body)('role').optional().isIn(['customer', 'provider']).withMessage('Invalid role')
+    (0, express_validator_1.body)('role').optional().isIn(['customer', 'provider']).withMessage('Invalid role'),
+    (0, express_validator_1.body)('businessName').optional().trim().notEmpty().withMessage('Business name is required for providers'),
+    (0, express_validator_1.body)('category').optional().trim().notEmpty().withMessage('Category is required for providers')
 ];
 const loginValidation = [
     (0, express_validator_1.body)('phone').trim().notEmpty().withMessage('Phone number is required'),

@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import * as xss from 'xss-clean';
-import * as hpp from 'hpp';
+import xss from 'xss-clean';
+import hpp from 'hpp';
 
 // Rate limiting
 export const limiter = rateLimit({
@@ -129,4 +129,4 @@ export const errorHandler = (err: any, res: Response) => {
   return res.status(err.status || 500).json({
     message: err.message || 'Internal server error'
   });
-}; 
+};

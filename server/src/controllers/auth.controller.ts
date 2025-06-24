@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { User } from '../models/User';
+import { ServiceProvider } from '../models/ServiceProvider';
 import { generateToken } from '../middleware/auth';
 import { validationResult } from 'express-validator';
 // FIX: Change import from sendSMS to notificationService
@@ -12,7 +13,7 @@ export const register = async (req: Request, res: Response) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { name, phone, email, password, role } = req.body;
+    const { name, phone, email, password, role, businessName, category } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ phone });
@@ -30,6 +31,33 @@ export const register = async (req: Request, res: Response) => {
     });
 
     await user.save();
+
+    // If registering as provider, create provider profile with minimal required data
+    if (role === 'provider' && businessName && category) {
+      const provider = new ServiceProvider({
+        userId: user._id,
+        businessName,
+        category,
+        description: `${businessName} - ${category}`, // Default description
+        location: {
+          type: 'Point',
+          coordinates: [36.2021, 37.1343], // Default coordinates (Aleppo, Syria)
+          address: 'سوريا' // Default address
+        },
+        services: [], // Empty services array - to be filled later
+        workingHours: [ // Default working hours
+          { day: 'sunday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'monday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'tuesday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'wednesday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'thursday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'friday', open: '09:00', close: '17:00', isClosed: true },
+          { day: 'saturday', open: '09:00', close: '17:00', isClosed: false }
+        ]
+      });
+
+      await provider.save();
+    }
 
     // Generate token
     const token = generateToken(user._id.toString());
