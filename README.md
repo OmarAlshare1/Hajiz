@@ -1,4 +1,4 @@
-# Hajiz (حاجز) - Appointment Booking Platform
+# Hajiz (حجز) - Appointment Booking Platform
 
 Hajiz is a modern appointment booking platform designed for service providers in Syria. It enables customers to easily book appointments with various service providers like salons, clinics, car services, tutors, and gyms.
 
