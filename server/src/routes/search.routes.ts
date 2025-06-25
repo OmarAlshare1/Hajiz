@@ -20,4 +20,4 @@ router.get('/', searchValidation, searchProviders);
 router.get('/categories', getCategories);
 router.get('/popular-services', getPopularServices);
 
-export default router; 
+export default router;

@@ -14,8 +14,8 @@ exports.limiter = (0, express_rate_limit_1.default)({
     message: 'Too many requests from this IP, please try again later'
 });
 exports.authLimiter = (0, express_rate_limit_1.default)({
-    windowMs: 60 * 60 * 1000,
-    max: 5,
+    windowMs: 15 * 60 * 1000,
+    max: 20,
     message: 'Too many authentication attempts, please try again later'
 });
 const sanitizeData = (req, _res, next) => {

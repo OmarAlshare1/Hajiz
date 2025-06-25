@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ServiceProvider } from '../models/ServiceProvider';
 import { validationResult } from 'express-validator';
 import { User } from '../models/User';
+import { Appointment } from '../models/Appointment';
 
 // Create service provider profile
 export const createProvider = async (req: Request, res: Response) => {
@@ -412,4 +413,35 @@ export const getAvailabilityExceptions = async (req: Request, res: Response) => 
     res.status(500).json({ message: 'Server error' });
   }
   return;
+};
+
+// Get reviews for a specific provider
+export const getProviderReviews = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Find all completed appointments for this provider that have reviews
+    const appointments = await Appointment.find({
+      serviceProvider: id,
+      status: 'completed',
+      rating: { $exists: true }
+    })
+    .populate('customer', 'name')
+    .select('rating review customer createdAt')
+    .sort({ createdAt: -1 });
+
+    // Transform the data to match the expected review format
+    const reviews = appointments.map(appointment => ({
+      _id: appointment._id,
+      rating: appointment.rating,
+      comment: appointment.review,
+      customer: appointment.customer,
+      createdAt: appointment.createdAt
+    }));
+
+    res.json(reviews);
+  } catch (error) {
+    console.error('Get provider reviews error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };

@@ -7,7 +7,6 @@ import mongoSanitize from 'express-mongo-sanitize';
 // Note: xss-clean and hpp are imported from security middleware
 // rateLimit is imported from security middleware
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 
 // Import routes
 import authRoutes from './routes/auth.routes';
@@ -108,11 +107,6 @@ app.use(limiter);             // General rate limiting
 app.use('/api/auth', authLimiter);
 
 // --- Database Connection ---
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz';
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((error) => console.error('MongoDB connection error:', error));
-
 // --- API Routes ---
 // Register your API Routes - Ensure these are placed AFTER all general middleware
 app.use('/api/auth', authRoutes);

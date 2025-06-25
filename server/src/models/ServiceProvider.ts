@@ -32,9 +32,10 @@ export interface IAvailabilityException {
 }
 
 export interface IServiceProvider extends Document {
-  userId: Types.ObjectId;
+  userId: mongoose.Types.ObjectId;
   businessName: string;
-  category: string;
+  category: 'events' | 'villas' | 'doctors' | 'restaurants' | 'hotels' | 'beauty' | 'education' | 'sports' | 'transportation' | 'entertainment' | 'shopping' | 'tourism' | 'legal' | 'finance' | 'technology' | 'construction' | 'agriculture' | 'manufacturing';
+  subcategory?: string;
   description: string;
   location: ILocation;
   services: IService[];
@@ -44,6 +45,31 @@ export interface IServiceProvider extends Document {
   totalRatings: number;
   isVerified: boolean;
   images: string[];
+  tags: string[];
+  amenities: string[];
+  capacity?: number;
+  priceRange: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  contactInfo: {
+    phone: string;
+    email?: string;
+    website?: string;
+    socialMedia?: {
+      facebook?: string;
+      instagram?: string;
+      twitter?: string;
+    };
+  };
+  policies?: {
+    cancellation: string;
+    refund: string;
+    terms: string;
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const serviceProviderSchema = new Schema<IServiceProvider>({
@@ -59,7 +85,12 @@ const serviceProviderSchema = new Schema<IServiceProvider>({
   },
   category: {
     type: String,
-    required: true
+    required: true,
+    enum: ['events', 'villas', 'doctors', 'restaurants', 'hotels', 'beauty', 'education', 'sports', 'transportation', 'entertainment', 'shopping', 'tourism', 'legal', 'finance', 'technology', 'construction', 'agriculture', 'manufacturing']
+  },
+  subcategory: {
+    type: String,
+    trim: true
   },
   description: {
     type: String,
@@ -155,7 +186,39 @@ const serviceProviderSchema = new Schema<IServiceProvider>({
   },
   images: [{
     type: String
-  }]
+  }],
+  tags: [{
+    type: String,
+    trim: true
+  }],
+  amenities: [{
+    type: String,
+    trim: true
+  }],
+  capacity: {
+    type: Number,
+    min: 1
+  },
+  priceRange: {
+    min: { type: Number, required: true, min: 0 },
+    max: { type: Number, required: true, min: 0 },
+    currency: { type: String, default: 'SYP' }
+  },
+  contactInfo: {
+    phone: { type: String, required: true },
+    email: { type: String, trim: true },
+    website: { type: String, trim: true },
+    socialMedia: {
+      facebook: { type: String, trim: true },
+      instagram: { type: String, trim: true },
+      twitter: { type: String, trim: true }
+    }
+  },
+  policies: {
+    cancellation: { type: String },
+    refund: { type: String },
+    terms: { type: String }
+  }
 }, {
   timestamps: true
 });

@@ -58,4 +58,4 @@ export const generateToken = (userId: string): string => {
   }
   const options: SignOptions = { expiresIn: expiresIn as any };
   return jwt.sign({ userId }, secret, options);
-}; 
+};

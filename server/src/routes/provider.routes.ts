@@ -12,7 +12,8 @@ import {
   updateWorkingHours,
   addAvailabilityException,
   deleteAvailabilityException,
-  getAvailabilityExceptions
+  getAvailabilityExceptions,
+  getProviderReviews
 } from '../controllers/provider.controller';
 import { auth } from '../middleware/auth';
 import { isProvider } from '../middleware/isProvider';
@@ -88,5 +89,8 @@ router.put('/working-hours', auth, isProvider, workingHoursValidation, updateWor
 router.post('/availability-exceptions', auth, isProvider, availabilityExceptionValidation, addAvailabilityException);
 router.delete('/availability-exceptions/:exceptionId', auth, isProvider, deleteAvailabilityException);
 router.get('/availability-exceptions', auth, isProvider, getAvailabilityExceptions);
+
+// Reviews routes
+router.get('/:id/reviews', getProviderReviews);
 
 export default router;

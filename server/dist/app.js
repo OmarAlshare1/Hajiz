@@ -8,7 +8,6 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const express_mongo_sanitize_1 = __importDefault(require("express-mongo-sanitize"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const mongoose_1 = __importDefault(require("mongoose"));
 const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const provider_routes_1 = __importDefault(require("./routes/provider.routes"));
 const appointment_routes_1 = __importDefault(require("./routes/appointment.routes"));
@@ -17,6 +16,7 @@ const upload_routes_1 = __importDefault(require("./routes/upload.routes"));
 const security_1 = require("./middleware/security");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
+app.set('trust proxy', 1);
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
     origin: (origin, callback) => {
@@ -27,6 +27,11 @@ app.use((0, cors_1.default)({
             'https://www.hajiz.co.uk',
             'https://hajiz-tvi6d9b95k-omars-projects-ce6be162.vercel.app',
             'https://hajiz-ann7xz4y5-omars-projects-ce6be162.vercel.app',
+            'https://hajiz-rodkamoat-omars-projects-ce6be162.vercel.app',
+            'https://hajiz-zhuchpy7s-omars-projects-ce6be162.vercel.app',
+            'https://hajiz-cynj3bkic-omars-projects-ce6be162.vercel.app',
+            'https://hajiz-4aw0jgmst-omars-projects-ce6be162.vercel.app',
+            'https://hajiz-8ul6j0qqo-omars-projects-ce6be162.vercel.app',
             'https://krrwf4d-next-js-projects-online-n2.vercel.app',
             ...(process.env.CORS_ORIGIN_FRONTEND ? [process.env.CORS_ORIGIN_FRONTEND] : []),
         ];
@@ -51,10 +56,6 @@ app.use(security_1.requestSizeLimiter);
 app.use(security_1.validateContentType);
 app.use(security_1.limiter);
 app.use('/api/auth', security_1.authLimiter);
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz';
-mongoose_1.default.connect(MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch((error) => console.error('MongoDB connection error:', error));
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/providers', provider_routes_1.default);
 app.use('/api/appointments', appointment_routes_1.default);

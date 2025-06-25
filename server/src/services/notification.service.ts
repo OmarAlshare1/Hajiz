@@ -102,7 +102,7 @@ class NotificationService {
       if (recipient.email) {
         await this.sendEmail(
           recipient.email,
-          'إشعار من تطبيق حاجز',
+          'إشعار من تطبيق حجز',
           message
         );
       }
@@ -116,7 +116,7 @@ class NotificationService {
       ) {
         await this.sendPushNotification(
           rec._id.toString(),
-          'إشعار من تطبيق حاجز',
+          'إشعار من تطبيق حجز',
           message
         );
       }
@@ -140,7 +140,7 @@ class NotificationService {
       if (provider.email) {
         await this.sendEmail(
           provider.email,
-          'تقييم جديد - حاجز',
+          'تقييم جديد - حجز',
           message
         );
       }

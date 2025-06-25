@@ -14,6 +14,8 @@ export interface IAppointment extends Document {
   notes?: string;
   rating?: number;
   review?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const appointmentSchema = new Schema<IAppointment>({
@@ -81,4 +83,4 @@ appointmentSchema.index({ serviceProvider: 1, dateTime: 1 });
 // Index for querying appointments by customer
 appointmentSchema.index({ customer: 1 });
 
-export const Appointment = mongoose.model<IAppointment>('Appointment', appointmentSchema); 
+export const Appointment = mongoose.model<IAppointment>('Appointment', appointmentSchema);

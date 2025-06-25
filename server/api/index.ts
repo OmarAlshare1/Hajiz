@@ -9,10 +9,10 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
 // Import routes
-import authRoutes from './routes/auth.routes';
-import providerRoutes from './routes/provider.routes';
-import appointmentRoutes from './routes/appointment.routes';
-import searchRoutes from './routes/search.routes';
+import authRoutes from '../src/routes/auth.routes';
+import providerRoutes from '../src/routes/provider.routes';
+import appointmentRoutes from '../src/routes/appointment.routes';
+import searchRoutes from '../src/routes/search.routes';
 
 // Load env vars - THIS MUST BE AT THE VERY TOP, AFTER ALL IMPORTS
 dotenv.config();
@@ -50,6 +50,8 @@ app.use(cors({
       'http://localhost:3000',
       'https://www.hajiz.co.uk',
       'https://hajiz-m2xrfwsqp-omars-projects-ce6be162.vercel.app',
+      'https://hajiz-client.vercel.app',
+      'https://hajiz.vercel.app',
     ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);

@@ -25,7 +25,8 @@
   },
   "include": [
     "src/**/*.ts", // This covers your main .ts files
-    "src/**/*.d.ts" // This explicitly ensures .d.ts files in src are included
+    "src/**/*.d.ts", // This explicitly ensures .d.ts files in src are included
+    "api/**/*.ts" // Include API directory for Vercel serverless functions
   ],
   "exclude": [
     "node_modules",

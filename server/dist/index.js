@@ -92,9 +92,50 @@ const limiter = (0, express_rate_limit_1.default)({
     max: 100
 });
 app.use(limiter);
-mongoose_1.default.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz')
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.error('MongoDB connection error:', err));
+const mongoOptions = {
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 10,
+    minPoolSize: 5,
+    maxIdleTimeMS: 30000,
+    connectTimeoutMS: 30000
+};
+mongoose_1.default.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz', mongoOptions)
+    .then(() => {
+    console.log('MongoDB Connected successfully');
+    console.log('Connection state:', mongoose_1.default.connection.readyState);
+})
+    .catch(err => {
+    console.error('MongoDB connection error:', err);
+    console.error('Connection string:', process.env.MONGODB_URI ? 'URI provided' : 'Using default localhost');
+});
+mongoose_1.default.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err);
+});
+mongoose_1.default.connection.on('disconnected', () => {
+    console.log('MongoDB disconnected');
+});
+mongoose_1.default.connection.on('reconnected', () => {
+    console.log('MongoDB reconnected');
+});
+process.on('SIGINT', async () => {
+    console.log('Received SIGINT, shutting down gracefully...');
+    await mongoose_1.default.connection.close();
+    process.exit(0);
+});
+process.on('SIGTERM', async () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    await mongoose_1.default.connection.close();
+    process.exit(0);
+});
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
 app.use('/api/auth', auth_routes_1.default);
 app.use('/api/providers', provider_routes_1.default);
 app.use('/api/appointments', appointment_routes_1.default);

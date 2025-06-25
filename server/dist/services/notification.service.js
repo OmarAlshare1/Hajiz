@@ -86,14 +86,14 @@ class NotificationService {
                 await this.sendSMS(recipient.phone, message);
             }
             if (recipient.email) {
-                await this.sendEmail(recipient.email, 'إشعار من تطبيق حاجز', message);
+                await this.sendEmail(recipient.email, 'إشعار من تطبيق حجز', message);
             }
             const rec = recipient;
             if (rec &&
                 typeof rec === 'object' &&
                 '_id' in rec &&
                 typeof rec._id === 'object') {
-                await this.sendPushNotification(rec._id.toString(), 'إشعار من تطبيق حاجز', message);
+                await this.sendPushNotification(rec._id.toString(), 'إشعار من تطبيق حجز', message);
             }
         }
         catch (error) {
@@ -107,7 +107,7 @@ class NotificationService {
                 await this.sendSMS(provider.phone, message);
             }
             if (provider.email) {
-                await this.sendEmail(provider.email, 'تقييم جديد - حاجز', message);
+                await this.sendEmail(provider.email, 'تقييم جديد - حجز', message);
             }
             const prov = provider;
             if (prov &&
