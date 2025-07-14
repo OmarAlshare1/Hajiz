@@ -175,4 +175,4 @@ This project is licensed under the ISC License.
 
 ## Contact
 
-For any inquiries, please reach out to [your-email@example.com]. 
+For any inquiries, please reach out to omarmanhalalshare@gmail.com
