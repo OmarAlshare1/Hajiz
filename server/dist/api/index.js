@@ -101,8 +101,7 @@ const mongoOptions = {
     maxPoolSize: 10,
     minPoolSize: 0,
     maxIdleTimeMS: 30000,
-    bufferCommands: false,
-    bufferMaxEntries: 0
+    bufferCommands: false
 };
 const connectDB = async () => {
     try {

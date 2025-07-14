@@ -91,8 +91,7 @@ const mongoOptions = {
   maxPoolSize: 10,
   minPoolSize: 0, // Allow pool to scale down to 0 in serverless
   maxIdleTimeMS: 30000,
-  bufferCommands: false, // Disable mongoose buffering
-  bufferMaxEntries: 0 // Disable mongoose buffering
+  bufferCommands: false // Disable mongoose buffering
 };
 
 // Enhanced connection with better error handling
