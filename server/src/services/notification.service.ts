@@ -1,6 +1,6 @@
 import { IUser } from '../models/User';
 import { IAppointment } from '../models/Appointment';
-import twilio from 'twilio';
+import axios from 'axios';
 
 export enum NotificationType {
   APPOINTMENT_BOOKED = 'APPOINTMENT_BOOKED',
@@ -11,45 +11,111 @@ export enum NotificationType {
 }
 
 class NotificationService {
-  private twilioClient: twilio.Twilio | null = null; // Private Twilio client instance
+  private aiSensyApiKey: string | null = null;
+  private aiSensyBaseUrl = 'https://backend.aisensy.com/campaign/t1/api/v2';
 
-  private getTwilioClient(): twilio.Twilio {
-    if (this.twilioClient) {
-      return this.twilioClient;
+  private getAiSensyApiKey(): string {
+    if (this.aiSensyApiKey) {
+      return this.aiSensyApiKey;
     }
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const apiKey = process.env.AISENSY_API_KEY;
 
-    if (!accountSid || !authToken) {
-      console.error('Twilio credentials (Account SID or Auth Token) are not set. Cannot initialize Twilio client.');
-      throw new Error('Twilio credentials missing.');
+    if (!apiKey) {
+      console.error('AiSensy API key is not set. Cannot send WhatsApp messages.');
+      throw new Error('AiSensy API key missing.');
     }
 
-    this.twilioClient = twilio(accountSid, authToken);
-    return this.twilioClient;
+    this.aiSensyApiKey = apiKey;
+    return this.aiSensyApiKey;
   }
 
-  // FIX: Change to public so it can be called from auth.controller.ts
+  // Send SMS using AiSensy (Note: AiSensy primarily focuses on WhatsApp, SMS might not be available)
   public async sendSMS(to: string, message: string): Promise<void> {
-    const from = process.env.TWILIO_PHONE_NUMBER;
-    if (!from) {
-      console.error('Twilio Phone Number is not set. Cannot send SMS.');
-      throw new Error('Twilio Phone Number missing.');
-    }
+    // For now, we'll redirect SMS to WhatsApp since AiSensy is WhatsApp-focused
+    console.log(`Redirecting SMS to WhatsApp for ${to}: ${message}`);
+    await this.sendWhatsApp(to, message);
+  }
 
+  // Send WhatsApp message using AiSensy API
+  public async sendWhatsApp(to: string, message: string): Promise<void> {
     try {
-      const client = this.getTwilioClient();
-      await client.messages.create({
-        body: message,
-        from: from,
-        to: to
+      const apiKey = this.getAiSensyApiKey();
+      const campaignName = process.env.AISENSY_CAMPAIGN_NAME || 'verification_campaign';
+      
+      // Format phone number - remove whatsapp: prefix if present
+      const phoneNumber = to.replace('whatsapp:', '');
+      
+      // Ensure phone number has country code
+      const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
+
+      const payload = {
+        apiKey: apiKey,
+        campaignName: campaignName,
+        destination: formattedNumber,
+        userName: 'User', // Default name, can be customized
+        templateParams: [message], // For simple text templates
+        source: 'Hajiz App'
+      };
+
+      const response = await axios.post(this.aiSensyBaseUrl, payload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-      console.log(`SMS sent to ${to}: ${message}`);
+
+      if (response.status === 200) {
+        console.log(`WhatsApp message sent via AiSensy to ${formattedNumber}: ${message}`);
+      } else {
+        throw new Error(`AiSensy API returned status ${response.status}`);
+      }
     } catch (error: any) {
-      console.error(`Error sending SMS to ${to}:`, error.message);
+      console.error(`Error sending WhatsApp message via AiSensy to ${to}:`, error.message);
       throw error;
     }
+  }
+
+  // Generate a 6-digit verification code
+  public generateVerificationCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  // Send verification code via WhatsApp
+  public async sendVerificationCode(
+    phoneNumber: string, 
+    code: string, 
+    type: 'login' | 'register' | 'password_reset',
+    language: 'ar' | 'en' = 'ar'
+  ): Promise<void> {
+    let message = '';
+    
+    if (language === 'ar') {
+      switch (type) {
+        case 'register':
+          message = `مرحباً بك في حجز! رمز التحقق الخاص بك هو: ${code}\n\nهذا الرمز صالح لمدة 10 دقائق فقط.\n\nإذا لم تطلب هذا الرمز، يرجى تجاهل هذه الرسالة.`;
+          break;
+        case 'login':
+          message = `رمز تسجيل الدخول إلى حجز: ${code}\n\nهذا الرمز صالح لمدة 10 دقائق فقط.\n\nإذا لم تطلب هذا الرمز، يرجى تجاهل هذه الرسالة.`;
+          break;
+        case 'password_reset':
+          message = `رمز إعادة تعيين كلمة المرور لحساب حجز: ${code}\n\nهذا الرمز صالح لمدة 10 دقائق فقط.\n\nإذا لم تطلب هذا الرمز، يرجى تجاهل هذه الرسالة.`;
+          break;
+      }
+    } else {
+      switch (type) {
+        case 'register':
+          message = `Welcome to Hajiz! Your verification code is: ${code}\n\nThis code is valid for 10 minutes only.\n\nIf you didn't request this code, please ignore this message.`;
+          break;
+        case 'login':
+          message = `Your Hajiz login verification code: ${code}\n\nThis code is valid for 10 minutes only.\n\nIf you didn't request this code, please ignore this message.`;
+          break;
+        case 'password_reset':
+          message = `Your Hajiz password reset code: ${code}\n\nThis code is valid for 10 minutes only.\n\nIf you didn't request this code, please ignore this message.`;
+          break;
+      }
+    }
+
+    await this.sendWhatsApp(phoneNumber, message);
   }
 
   private async sendEmail(email: string, subject: string, message: string): Promise<void> {

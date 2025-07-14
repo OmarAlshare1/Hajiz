@@ -28,6 +28,10 @@ import { // Ensure all security middleware are correctly imported and used
 // Load environment variables from .env file
 dotenv.config();
 
+// Import and run environment validation
+import { validateEnvironmentMiddleware, additionalSecurityHeaders, securityLogger } from './middleware/validateEnvironment';
+validateEnvironmentMiddleware();
+
 // Create Express app instance
 const app = express();
 
@@ -35,6 +39,14 @@ const app = express();
 app.set('trust proxy', 1);
 
 // --- Security Middleware (Apply these early in the middleware chain) ---
+
+// Import enhanced security middleware
+import { 
+  bruteForceProtection, 
+  trackFailedAuth, 
+  apiEndpointProtection, 
+  botDetection
+} from './middleware/security';
 
 // Helmet helps secure Express apps by setting various HTTP headers
 app.use(helmet());
@@ -76,11 +88,21 @@ app.use(cors({
   // Define the HTTP methods allowed for cross-origin requests
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   // Define allowed headers that can be sent with cross-origin requests
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   // Allow credentials (like cookies or HTTP authentication) to be sent with requests
   // Set to true if your frontend sends cookies/session tokens, false if only using stateless JWT in localStorage
   credentials: true
 }));
+
+// Additional security middleware
+app.use(additionalSecurityHeaders);
+app.use(securityLogger);
+
+// Apply enhanced security middleware in order of importance
+app.use(bruteForceProtection);
+app.use(botDetection);
+app.use(apiEndpointProtection);
+app.use(trackFailedAuth);
 
 // Express built-in middleware for parsing request bodies
 // limit: '10mb' ensures that large payloads (e.g., for image uploads) are handled
@@ -115,10 +137,13 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/uploads', uploadRoutes);
 
+// Security monitoring routes (admin only)
+import securityRoutes from './routes/security';
+app.use('/api/security', securityRoutes);
+
 // Basic root route for API status check
 app.get('/', (_req, res) => {
   res.json({ message: 'Welcome to Hajiz API' });
-  return; // Explicit return is good practice
 });
 
 // --- Error Handling Middleware ---
@@ -133,8 +158,10 @@ export default app;
 // This block ensures the server only starts listening on a port
 // when running in a non-production environment (e.g., development)
 if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  const PORT = parseInt(process.env.PORT || '5000', 10);
+  app.listen(PORT, '127.0.0.1', () => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Server is running on port ${PORT}`);
+    }
   });
 }

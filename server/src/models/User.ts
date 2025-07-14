@@ -14,6 +14,11 @@ export interface IUser extends Document {
   isAdmin: boolean;
   resetCode?: string;
   resetCodeExpires?: Date;
+  verificationCode?: string;
+  verificationCodeExpires?: Date;
+  verificationCodeType?: 'login' | 'register' | 'password_reset';
+  isPhoneVerified: boolean;
+  countryCode: string;
 }
 
 const userSchema = new Schema<IUser>({
@@ -65,6 +70,28 @@ const userSchema = new Schema<IUser>({
   resetCodeExpires: {
     type: Date,
     select: false
+  },
+  verificationCode: {
+    type: String,
+    select: false
+  },
+  verificationCodeExpires: {
+    type: Date,
+    select: false
+  },
+  verificationCodeType: {
+    type: String,
+    enum: ['login', 'register', 'password_reset'],
+    select: false
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  countryCode: {
+    type: String,
+    required: true,
+    default: '+963' // Default to Syria
   }
 });
 
@@ -86,4 +113,4 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export const User = mongoose.model<IUser>('User', userSchema); 
+export const User = mongoose.model<IUser>('User', userSchema);

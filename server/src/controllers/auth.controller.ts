@@ -1,10 +1,9 @@
 import { Request, Response } from 'express';
-import { User } from '../models/User';
-import { ServiceProvider } from '../models/ServiceProvider';
-import { generateToken } from '../middleware/auth';
 import { validationResult } from 'express-validator';
-// FIX: Change import from sendSMS to notificationService
-import { notificationService } from '../services/notification.service'; //
+import { User } from '../models/User';
+import { generateToken } from '../middleware/auth';
+import { ServiceProvider } from '../models/ServiceProvider';
+import { notificationService } from '../services/notification.service';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -78,6 +77,275 @@ export const register = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
   return;
+};
+
+// Send WhatsApp verification code for registration
+export const sendRegistrationCode = async (req: Request, res: Response) => {
+  try {
+    const { phone, countryCode, language = 'ar' } = req.body;
+    
+    // Format phone number with country code
+    const fullPhoneNumber = `${countryCode}${phone.replace(/^0+/, '')}`;
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ phone: fullPhoneNumber });
+    if (existingUser && existingUser.isPhoneVerified) {
+      return res.status(400).json({ message: 'User already exists with this phone number' });
+    }
+    
+    // Generate verification code
+    const code = notificationService.generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    
+    // Create or update user with verification code
+    if (existingUser) {
+      existingUser.verificationCode = code;
+      existingUser.verificationCodeExpires = expiresAt;
+      existingUser.verificationCodeType = 'register';
+      existingUser.countryCode = countryCode;
+      await existingUser.save();
+    } else {
+      const tempUser = new User({
+        name: 'Temp User',
+        phone: fullPhoneNumber,
+        password: 'temp_password',
+        verificationCode: code,
+        verificationCodeExpires: expiresAt,
+        verificationCodeType: 'register',
+        countryCode,
+        language,
+        isPhoneVerified: false
+      });
+      await tempUser.save();
+    }
+    
+    // Send WhatsApp verification code
+    await notificationService.sendVerificationCode(fullPhoneNumber, code, 'register', language);
+    
+    return res.json({ 
+      message: 'Verification code sent to WhatsApp',
+      phone: fullPhoneNumber
+    });
+  } catch (error) {
+    console.error('Send registration code error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Verify registration code and complete registration
+export const verifyRegistrationCode = async (req: Request, res: Response) => {
+  try {
+    const { phone, code, name, email, password, role, businessName, category } = req.body;
+    
+    // Find user with verification code
+    const user = await User.findOne({
+      phone,
+      verificationCode: code,
+      verificationCodeExpires: { $gt: Date.now() },
+      verificationCodeType: 'register'
+    }).select('+verificationCode +verificationCodeExpires +verificationCodeType');
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification code' });
+    }
+    
+    // Update user with actual registration data
+    user.name = name;
+    user.email = email;
+    user.password = password;
+    user.role = role || 'customer';
+    user.isPhoneVerified = true;
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
+    user.verificationCodeType = undefined;
+    await user.save();
+    
+    // If registering as provider, create provider profile
+    if (role === 'provider' && businessName && category) {
+      const provider = new ServiceProvider({
+        user: user._id,
+        businessName,
+        category,
+        description: '',
+        location: {
+          type: 'Point',
+          coordinates: [0, 0],
+          address: ''
+        },
+        services: [],
+        workingHours: []
+      });
+      await provider.save();
+    }
+    
+    // Generate token
+    const token = generateToken(user._id.toString());
+    
+    return res.json({
+      message: 'Registration completed successfully',
+      token,
+      user: {
+        _id: user._id.toString(),
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+        isPhoneVerified: user.isPhoneVerified
+      }
+    });
+  } catch (error) {
+    console.error('Verify registration code error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Send WhatsApp verification code for login
+export const sendLoginCode = async (req: Request, res: Response) => {
+  try {
+    const { phone, countryCode } = req.body;
+    
+    // Format phone number with country code
+    const fullPhoneNumber = `${countryCode}${phone.replace(/^0+/, '')}`;
+    
+    // Find user
+    const user = await User.findOne({ phone: fullPhoneNumber });
+    if (!user || !user.isPhoneVerified) {
+      return res.status(404).json({ message: 'User not found or phone not verified' });
+    }
+    
+    // Generate verification code
+    const code = notificationService.generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    
+    // Update user with verification code
+    user.verificationCode = code;
+    user.verificationCodeExpires = expiresAt;
+    user.verificationCodeType = 'login';
+    await user.save();
+    
+    // Send WhatsApp verification code
+    await notificationService.sendVerificationCode(fullPhoneNumber, code, 'login', user.language);
+    
+    return res.json({ 
+      message: 'Login verification code sent to WhatsApp',
+      phone: fullPhoneNumber
+    });
+  } catch (error) {
+    console.error('Send login code error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Verify login code and authenticate user
+export const verifyLoginCode = async (req: Request, res: Response) => {
+  try {
+    const { phone, code } = req.body;
+    
+    // Find user with verification code
+    const user = await User.findOne({
+      phone,
+      verificationCode: code,
+      verificationCodeExpires: { $gt: Date.now() },
+      verificationCodeType: 'login'
+    }).select('+verificationCode +verificationCodeExpires +verificationCodeType');
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification code' });
+    }
+    
+    // Clear verification code
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
+    user.verificationCodeType = undefined;
+    await user.save();
+    
+    // Generate token
+    const token = generateToken(user._id.toString());
+    
+    return res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        _id: user._id.toString(),
+        name: user.name,
+        phone: user.phone,
+        email: user.email,
+        role: user.role,
+        isPhoneVerified: user.isPhoneVerified
+      }
+    });
+  } catch (error) {
+    console.error('Verify login code error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Send WhatsApp verification code for password reset
+export const sendPasswordResetCode = async (req: Request, res: Response) => {
+  try {
+    const { phone, countryCode } = req.body;
+    
+    // Format phone number with country code
+    const fullPhoneNumber = `${countryCode}${phone.replace(/^0+/, '')}`;
+    
+    // Find user
+    const user = await User.findOne({ phone: fullPhoneNumber });
+    if (!user || !user.isPhoneVerified) {
+      return res.status(404).json({ message: 'User not found or phone not verified' });
+    }
+    
+    // Generate verification code
+    const code = notificationService.generateVerificationCode();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    
+    // Update user with verification code
+    user.verificationCode = code;
+    user.verificationCodeExpires = expiresAt;
+    user.verificationCodeType = 'password_reset';
+    await user.save();
+    
+    // Send WhatsApp verification code
+    await notificationService.sendVerificationCode(fullPhoneNumber, code, 'password_reset', user.language);
+    
+    return res.json({ 
+      message: 'Password reset code sent to WhatsApp',
+      phone: fullPhoneNumber
+    });
+  } catch (error) {
+    console.error('Send password reset code error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Verify password reset code and reset password
+export const verifyPasswordResetCode = async (req: Request, res: Response) => {
+  try {
+    const { phone, code, newPassword } = req.body;
+    
+    // Find user with verification code
+    const user = await User.findOne({
+      phone,
+      verificationCode: code,
+      verificationCodeExpires: { $gt: Date.now() },
+      verificationCodeType: 'password_reset'
+    }).select('+verificationCode +verificationCodeExpires +verificationCodeType');
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired verification code' });
+    }
+    
+    // Update password and clear verification code
+    user.password = newPassword;
+    user.verificationCode = undefined;
+    user.verificationCodeExpires = undefined;
+    user.verificationCodeType = undefined;
+    await user.save();
+    
+    return res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Verify password reset code error:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
 };
 
 export const login = async (req: Request, res: Response) => {
