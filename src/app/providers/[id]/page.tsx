@@ -3,11 +3,14 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { providers, reviews, appointments } from '../../../lib/api'; // API imports
 import { useAuth } from '../../../hooks/useAuth'; // Auth hook
 import Calendar from 'react-calendar'; // Calendar component
 import 'react-calendar/dist/Calendar.css'; // Calendar default styles (will be overridden/enhanced)
 import CustomSelect from '../../../components/CustomSelect'; // Custom dropdown component
+import ImageGallery from '../../../components/ImageGallery'; // Image gallery with lightbox
 
 // Define types for clarity and type safety
 interface ILocation {
@@ -246,6 +249,14 @@ export default function ProviderDetailsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left Column (Provider Info & Booking) */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Provider Images Gallery */}
+          {provider.images && provider.images.length > 0 && (
+            <section className="bg-white rounded-xl shadow-lg p-6 sm:p-8 border-t-4 border-green-600">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">معرض الصور</h2>
+              <ImageGallery images={provider.images} />
+            </section>
+          )}
+          
           {/* Provider Overview Card */}
           <section className="bg-white rounded-xl shadow-lg p-6 sm:p-8 border-t-4 border-blue-600">
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">معلومات مقدم الخدمة</h2>

@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'; // Using Heroicons for search icon
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { search, providers as providersApi } from '../../lib/api'; // Explicitly importing for clarity
+import { search, providers as providersApi } from '../../lib/api';
+import { useTranslations } from '../../hooks/useTranslations';
+import '../../styles/syrian-theme.css';
 
 // Define categories with names and emojis for visual appeal
 const categories = [
@@ -21,80 +23,77 @@ const categories = [
   { name: 'أخرى', icon: '✨' },
 ];
 
-export default function HomePage() {
-  // Defining the expected user structure for type safety
-  interface AuthUser { _id: string; name: string; email?: string; phone: string; role: 'customer' | 'provider'; }
+// Defining the expected user structure for type safety
+interface AuthUser { 
+  _id: string; 
+  name: string; 
+  email?: string; 
+  phone: string; 
+  role: 'customer' | 'provider'; 
+}
 
+export default function HomePage() {
   const { user, isLoading: userLoading, isAuthenticated } = useAuth<AuthUser>();
   const router = useRouter();
-  const queryClient = useQueryClient(); // For invalidating queries after mutations
+  const queryClient = useQueryClient();
+  const { t } = useTranslations();
 
-  const [showModal, setShowModal] = useState(false); // State to control the visibility of the "Add Service" modal
-  const [searchQuery, setSearchQuery] = useState(''); // State for the search input field
-  const [searchResults, setSearchResults] = useState<any[]>([]); // State to store search results
-  const [isSearching, setIsSearching] = useState(false); // State to indicate if a search is in progress
+  const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // State for the "Add Service" modal form
   const [addServiceFormData, setAddServiceFormData] = useState({
     name: '',
-    duration: 0, // Default to 0, input type number handles empty string to 0 if needed
-    price: 0,    // Default to 0
+    duration: 0,
+    price: 0,
     description: '',
   });
-  const [addServiceError, setAddServiceError] = useState('');     // Error message for add service form
-  const [addServiceSuccess, setAddServiceSuccess] = useState(''); // Success message for add service form
+  const [addServiceError, setAddServiceError] = useState('');
+  const [addServiceSuccess, setAddServiceSuccess] = useState('');
 
   // useQuery hook to fetch popular providers
   const { data: popularProviders, isLoading: popularLoading } = useQuery({
     queryKey: ['popularProviders'],
     queryFn: async () => {
-      // Fetch popular providers (empty query string typically fetches all or popular by default)
       const res = await search.providers('');
       return res.data?.providers || [];
     },
-    // Keep data fresh for 5 minutes, and garbage collect after 5 minutes of inactivity
     staleTime: 5 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
-    // Only enable query if window object is defined (client-side rendering)
     enabled: typeof window !== 'undefined',
   });
 
   // Handles the submission of the main search bar
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSearching(true); // Indicate search is in progress
-    setSearchResults([]); // Clear previous search results
+    setIsSearching(true);
+    setSearchResults([]);
 
     try {
-      // Call the search API with the current query
       const res = await search.providers(searchQuery);
-      setSearchResults(res.data?.providers || []); // Update results
+      setSearchResults(res.data?.providers || []);
     } catch (error) {
       console.error('Error during search:', error);
-      setSearchResults([]); // Clear results on error
-      // Optionally, show a user-facing error message here
+      setSearchResults([]);
     } finally {
-      setIsSearching(false); // End search
+      setIsSearching(false);
     }
   };
 
   // useMutation hook for adding a new service via the modal
   const addServiceMutation = useMutation({
-    mutationFn: providersApi.addService, // The API function to call
+    mutationFn: providersApi.addService,
     onSuccess: () => {
-      setAddServiceSuccess('تمت إضافة الخدمة بنجاح!'); // Show success message
-      setAddServiceError(''); // Clear any previous errors
-      // Invalidate queries to refetch provider profile data (e.g., to show the new service)
+      setAddServiceSuccess('تمت إضافة الخدمة بنجاح!');
+      setAddServiceError('');
       queryClient.invalidateQueries({ queryKey: ['provider-profile'] });
-      // Reset form fields
       setAddServiceFormData({ name: '', duration: 0, price: 0, description: '' });
-      // Close modal after a short delay
       setTimeout(() => setShowModal(false), 1500);
     },
     onError: (err: any) => {
-      // Display error message from the API or a generic one
       setAddServiceError(err.response?.data?.message || 'فشل إضافة الخدمة. يرجى التأكد من البيانات والمحاولة مرة أخرى.');
-      setAddServiceSuccess(''); // Clear any success message
+      setAddServiceSuccess('');
       console.error('Add service error:', err);
     },
   });
@@ -102,13 +101,12 @@ export default function HomePage() {
   // Handles submission of the "Add Service" modal form
   const handleAddServiceModalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic client-side validation
     if (!addServiceFormData.name || addServiceFormData.duration <= 0 || addServiceFormData.price <= 0) {
       setAddServiceError('الرجاء ملء جميع الحقول المطلوبة (الاسم، المدة، السعر) بشكل صحيح.');
       return;
     }
-    setAddServiceError(''); // Clear previous error before mutation
-    addServiceMutation.mutate(addServiceFormData); // Trigger the mutation
+    setAddServiceError('');
+    addServiceMutation.mutate(addServiceFormData);
   };
 
   // Handles changes in "Add Service" modal input fields
@@ -116,7 +114,6 @@ export default function HomePage() {
     const { name, value, type } = e.target;
     setAddServiceFormData((prev) => ({
       ...prev,
-      // Convert to number for 'number' type inputs, otherwise keep as string
       [name]: type === 'number' ? parseFloat(value) || 0 : value,
     }));
   };
@@ -124,110 +121,108 @@ export default function HomePage() {
   return (
     <div className="relative min-h-screen bg-gray-100 font-inter">
       {/* Hero Section */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center py-12 sm:py-16 pt-24">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
-          مرحباً {user?.name || ''} 👋
-        </h1>
-        <p className="text-md sm:text-lg lg:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          اختر تصنيف الخدمة التي تبحث عنها، أو أضف خدمتك الخاصة!
-        </p>
+      <div className="syrian-hero relative overflow-hidden">
+        {/* Syrian Wave Background */}
+        <div className="syrian-wave-bg"></div>
+      
+        
+        {/* Hajiz Logo */}
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-24 h-24">
+          <img src="/hajiz logo.jpeg" alt="Hajiz Logo" className="w-full h-full object-contain rounded-full shadow-lg" />
+        </div>
 
-        {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-y-3 sm:gap-y-0 sm:gap-x-4 mb-12">
-          <label htmlFor="search-input" className="sr-only">البحث عن خدمات</label>
-          <input
-            id="search-input"
-            name="search-input"
-            type="text"
-            required
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-gray-900 shadow-sm placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-500 sm:text-sm text-base transition duration-150 ease-in-out"
-            placeholder="ابحث عن اسم عمل، خدمة، أو تصنيف..."
-          />
-          <button
-            type="submit"
-            className="flex-none rounded-md bg-blue-600 px-4 py-2.5 text-base font-semibold text-white shadow-md hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
-            disabled={isSearching}
-          >
-            {isSearching ? 'جاري البحث...' : (
-              <>
-                <MagnifyingGlassIcon className="h-5 w-5 inline-block rtl:ml-2 ltr:mr-2" aria-hidden="true" /> بحث
-              </>
-            )}
-          </button>
-        </form>
+        <div className="relative z-10 max-w-4xl mx-auto px-4 pt-40 pb-20 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-12 drop-shadow-lg">
+            {t('welcome')}
+          </h1>
+          
 
-        {/* Search Results Display */}
-        {isSearching && (
-          <div className="text-center text-blue-600 text-lg mb-8">جاري البحث...</div>
-        )}
-        {!isSearching && searchQuery && searchResults.length === 0 && (
-          <div className="text-center text-gray-600 text-lg mb-8">لا توجد نتائج مطابقة لبحثك.</div>
-        )}
-        {searchResults.length > 0 && (
-          <div className="bg-white rounded-xl shadow-lg p-6 max-w-4xl mx-auto mb-12 text-right border border-gray-200">
-            <h3 className="text-xl sm:text-2xl font-bold mb-4 text-gray-800">نتائج البحث:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {searchResults.map((provider: any) => (
-                <div key={provider._id} className="bg-gray-50 rounded-lg shadow-sm p-4 hover:shadow-md transition duration-200 border border-gray-100">
-                  <h4 className="font-bold text-lg text-blue-700 mb-1">{provider.businessName}</h4>
-                  <p className="text-sm text-gray-600">التصنيف: {provider.category}</p>
-                  <p className="text-sm text-gray-500">العنوان: {provider.location?.address || 'غير محدد'}</p>
-                  <p className="text-sm text-gray-500 flex items-center">
-                    التقييم: {provider.rating?.toFixed(1) || 'جديد'}
-                    <span className="text-yellow-400 rtl:mr-1 ltr:ml-1">⭐</span>
-                  </p>
-                  {provider.services && provider.services.length > 0 && (
-                    <div className="mt-2 text-sm text-gray-700">
-                      <span className="font-semibold">الخدمات:</span> {provider.services.map((s: any) => s.name).join(', ')}
-                    </div>
-                  )}
-                  <button onClick={() => router.push(`/providers/${provider._id}`)} className="mt-4 text-blue-600 hover:underline text-sm font-semibold transition duration-150 ease-in-out">عرض التفاصيل</button>
-                </div>
-              ))}
+          {/* Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="max-w-2xl mx-auto mb-8">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="ابحث عن الخدمات..."
+                className="w-full px-6 py-4 text-lg rounded-full border-2 border-white/30 bg-white/90 backdrop-blur-sm focus:outline-none transition-all duration-300"
+              />
+              <button
+                type="submit"
+                disabled={isSearching}
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-syrian-red hover:bg-syrian-red-dark text-white p-3 rounded-full transition-colors duration-300 disabled:opacity-50"
+              >
+                <MagnifyingGlassIcon className="w-6 h-6" />
+              </button>
             </div>
+          </form>
+
+          {/* Categories */}
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-4 max-w-4xl mx-auto">
+            {categories.map((category, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setSearchQuery(category.name);
+                  handleSearchSubmit({ preventDefault: () => {} } as React.FormEvent);
+                }}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white hover:scale-105 transition-all duration-300 rounded-xl p-4 text-center shadow-lg hover:shadow-xl"
+              >
+                <div className="text-2xl mb-2">{category.icon}</div>
+                <div className="text-sm font-medium text-gray-800">{category.name}</div>
+              </button>
+            ))}
           </div>
-        )}
-      </div>
-
-      {/* Categories Section */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-16">
-        <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center mb-8">استكشف الفئات</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-          {categories.map((cat) => (
-            <div
-              key={cat.name}
-              onClick={() => router.push(`/providers?category=${cat.name}`)}
-              className="bg-white rounded-xl shadow-md p-4 sm:p-6 flex flex-col items-center justify-center text-center transform transition duration-300 hover:scale-105 hover:shadow-lg cursor-pointer border-b-4 border-blue-500 hover:border-blue-600"
-            >
-              <span className="text-3xl sm:text-4xl mb-3">{cat.icon}</span>
-              <span className="font-semibold text-gray-700 text-base sm:text-lg">{cat.name}</span>
-            </div>
-          ))}
         </div>
       </div>
 
-      {/* Recommended Providers Section */}
-      {isAuthenticated && popularProviders?.length > 0 && (
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mb-16">
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 text-center mb-8">مقدمو خدمات ننصح بهم</h2>
+      {/* Search Results */}
+      {searchResults.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">نتائج البحث</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {searchResults.map((provider: any) => (
+              <div key={provider._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6">
+                <h3 className="text-xl font-semibold text-gray-800 mb-2">{provider.name}</h3>
+                <p className="text-gray-600 mb-4">{provider.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-syrian-red font-bold">{provider.category}</span>
+                  <button
+                    onClick={() => router.push(`/providers/${provider._id}`)}
+                    className="bg-syrian-red hover:bg-syrian-red-dark text-white px-4 py-2 rounded-lg transition-colors duration-300"
+                  >
+                    عرض التفاصيل
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Popular Providers */}
+      {!searchResults.length && (
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">مقدمو الخدمات المميزون</h2>
           {popularLoading ? (
-            <div className="text-center text-gray-600 text-lg">جاري تحميل التوصيات...</div>
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-syrian-red mx-auto"></div>
+              <p className="mt-4 text-gray-600">جاري التحميل...</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {popularProviders.slice(0, 3).map((provider: any) => ( // Limiting to 3 for brevity on home page
-                <div key={provider._id} className="bg-white rounded-xl shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-lg cursor-pointer border border-gray-200">
-                  <div className="p-6">
-                    <h3 className="font-bold text-xl text-blue-700 mb-2">{provider.businessName}</h3>
-                    <p className="text-sm text-gray-600 mb-1">التصنيف: {provider.category}</p>
-                    <p className="text-sm text-gray-500 mb-2">العنوان: {provider.location?.address || 'غير محدد'}</p>
-                    <div className="flex items-center text-sm text-gray-700">
-                      <span className="rtl:ml-1 ltr:mr-1">{provider.rating?.toFixed(1) || 'جديد'}</span>
-                      <span className="text-yellow-400">⭐</span>
-                      <span className="text-xs text-gray-500 rtl:mr-2 ltr:ml-2">({provider.totalRatings || 0} تقييم)</span>
-                    </div>
-                    <button onClick={() => router.push(`/providers/${provider._id}`)} className="mt-4 text-blue-600 hover:underline text-sm font-semibold transition duration-150 ease-in-out">عرض التفاصيل</button>
+              {popularProviders?.slice(0, 6).map((provider: any) => (
+                <div key={provider._id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6">
+                  <h3 className="text-xl font-semibold text-gray-800 mb-2">{provider.name}</h3>
+                  <p className="text-gray-600 mb-4">{provider.description}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-syrian-red font-bold">{provider.category}</span>
+                    <button
+                      onClick={() => router.push(`/providers/${provider._id}`)}
+                      className="bg-syrian-red hover:bg-syrian-red-dark text-white px-4 py-2 rounded-lg transition-colors duration-300"
+                    >
+                      عرض التفاصيل
+                    </button>
                   </div>
                 </div>
               ))}
@@ -236,108 +231,103 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Floating Add Service Button (for providers only) */}
-      {user?.role === 'provider' && (
+      {/* Add Service Button for Providers */}
+      {isAuthenticated && user?.role === 'provider' && (
         <>
           <button
-            onClick={() => {
-              setShowModal(true); // Open modal
-              setAddServiceError(''); // Clear errors when opening
-              setAddServiceSuccess(''); // Clear success when opening
-              setAddServiceFormData({ name: '', duration: 0, price: 0, description: '' }); // Reset form
-            }}
-            className="fixed bottom-8 right-8 z-40 bg-green-600 text-white rounded-full w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center text-3xl sm:text-4xl shadow-lg hover:bg-green-700 transition transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            title="أضف خدمة جديدة"
+            onClick={() => setShowModal(true)}
+            className="fixed bottom-6 right-6 bg-syrian-red hover:bg-syrian-red-dark text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50"
           >
-            +
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
           </button>
 
           {/* Add Service Modal */}
           {showModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 sm:p-6">
-              <div className="bg-white rounded-xl shadow-2xl p-6 sm:p-8 w-full max-w-md relative animate-fade-in-scale">
-                <button
-                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-3xl transition"
-                  onClick={() => setShowModal(false)}
-                  title="إغلاق"
-                >
-                  &times; {/* HTML entity for multiplication sign, often used for close */}
-                </button>
-                <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center text-gray-800">إضافة خدمة جديدة</h2>
-
-                {addServiceMutation.isPending && <div className="text-center text-blue-600 text-lg mb-4">جاري الإضافة...</div>}
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-md w-full p-6">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">إضافة خدمة جديدة</h3>
+                
                 {addServiceError && (
-                  <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg relative mb-4 text-sm sm:text-base text-right" role="alert">
-                    <span className="block">{addServiceError}</span>
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {addServiceError}
                   </div>
                 )}
+                
                 {addServiceSuccess && (
-                  <div className="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded-lg relative mb-4 text-sm sm:text-base text-right" role="alert">
-                    <span className="block">{addServiceSuccess}</span>
+                  <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    {addServiceSuccess}
                   </div>
                 )}
 
-                <form onSubmit={handleAddServiceModalSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="serviceName" className="block text-sm sm:text-base font-medium text-gray-700 text-right mb-1">اسم الخدمة:</label>
+                <form onSubmit={handleAddServiceModalSubmit}>
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">اسم الخدمة</label>
                     <input
-                      id="serviceName"
-                      name="name"
                       type="text"
+                      name="name"
                       value={addServiceFormData.name}
                       onChange={handleAddServiceChange}
-                      className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 text-right text-base placeholder-gray-400"
-                      placeholder="اسم الخدمة، مثل: قص شعر، تدليك"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
                       required
                     />
                   </div>
-                  <div>
-                    <label htmlFor="servicePrice" className="block text-sm sm:text-base font-medium text-gray-700 text-right mb-1">السعر (ل.س):</label>
+                  
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">المدة (بالدقائق)</label>
                     <input
-                      id="servicePrice"
-                      name="price"
                       type="number"
-                      value={addServiceFormData.price === 0 ? '' : addServiceFormData.price} // Display empty string for 0 to make placeholder visible
-                      onChange={handleAddServiceChange}
-                      className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 text-right text-base placeholder-gray-400"
-                      placeholder="5000"
-                      required
-                      min="0" // Ensure price is not negative
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="serviceDuration" className="block text-sm sm:text-base font-medium text-gray-700 text-right mb-1">المدة (دقائق):</label>
-                    <input
-                      id="serviceDuration"
                       name="duration"
-                      type="number"
-                      value={addServiceFormData.duration === 0 ? '' : addServiceFormData.duration} // Display empty string for 0
+                      value={addServiceFormData.duration}
                       onChange={handleAddServiceChange}
-                      className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 text-right text-base placeholder-gray-400"
-                      placeholder="30"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      min="1"
                       required
-                      min="1" // Ensure duration is at least 1 minute
                     />
                   </div>
-                  <div>
-                    <label htmlFor="serviceDescription" className="block text-sm sm:text-base font-medium text-gray-700 text-right mb-1">الوصف (اختياري):</label>
+                  
+                  <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">السعر</label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={addServiceFormData.price}
+                      onChange={handleAddServiceChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      min="0"
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                  
+                  <div className="mb-6">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">الوصف</label>
                     <textarea
-                      id="serviceDescription"
                       name="description"
                       value={addServiceFormData.description}
                       onChange={handleAddServiceChange}
-                      rows={4} // Increased rows for better usability on mobile
-                      className="w-full border border-gray-300 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 text-right text-base placeholder-gray-400 resize-y" // Added resize-y
-                      placeholder="وصف تفصيلي للخدمة، مثل: قص شعر رجالي مع غسيل وتصفيف."
-                    ></textarea>
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                      rows={3}
+                    />
                   </div>
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed text-base font-semibold"
-                    disabled={addServiceMutation.isPending}
-                  >
-                    {addServiceMutation.isPending ? 'جاري الإضافة...' : 'حفظ الخدمة'}
-                  </button>
+                  
+                  <div className="flex justify-end space-x-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowModal(false)}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-300"
+                    >
+                      إلغاء
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={addServiceMutation.isPending}
+                      className="bg-syrian-red hover:bg-syrian-red-dark text-white px-6 py-2 rounded-lg transition-colors duration-300 disabled:opacity-50"
+                    >
+                      {addServiceMutation.isPending ? 'جاري الإضافة...' : 'إضافة'}
+                    </button>
+                  </div>
                 </form>
               </div>
             </div>

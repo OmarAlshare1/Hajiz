@@ -1,0 +1,288 @@
+/* Syrian Flag Theme - Color Palette and Design System */
+:root {
+  /* Syrian Flag Colors */
+  --syrian-red: #CE1126;
+  --syrian-white: #FFFFFF;
+  --syrian-black: #000000;
+  --syrian-green: #007A3D;
+  
+  /* Extended Palette */
+  --syrian-red-light: #E8394A;
+  --syrian-red-dark: #A50E20;
+  --syrian-green-light: #00A651;
+  --syrian-green-dark: #005A2B;
+  --syrian-gold: #FFD700;
+  
+  /* Gradients */
+  --syrian-flag-gradient: linear-gradient(180deg, var(--syrian-red) 0%, var(--syrian-white) 33.33%, var(--syrian-black) 66.66%, var(--syrian-green) 100%);
+  --syrian-wave-gradient: linear-gradient(45deg, var(--syrian-green), var(--syrian-red));
+  --syrian-ribbon-gradient: linear-gradient(135deg, var(--syrian-red) 0%, var(--syrian-green) 50%, var(--syrian-black) 100%);
+}
+
+/* Syrian Wave Pattern Background */
+.syrian-wave-bg {
+  background: linear-gradient(135deg, var(--syrian-green) 0%, var(--syrian-white) 50%, var(--syrian-red) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.syrian-wave-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="%23CE1126"></path><path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="%23007A3D"></path><path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="%23CE1126"></path></svg>') repeat-x;
+  background-size: 1200px 120px;
+  opacity: 0.3;
+  animation: wave 20s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-50px); }
+}
+
+/* Syrian Ribbon Design */
+.syrian-ribbon {
+  position: relative;
+  background: var(--syrian-ribbon-gradient);
+  padding: 1rem 2rem;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.syrian-ribbon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -10px;
+  width: 0;
+  height: 0;
+  border-top: 25px solid transparent;
+  border-bottom: 25px solid transparent;
+  border-right: 10px solid var(--syrian-red);
+}
+
+.syrian-ribbon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -10px;
+  width: 0;
+  height: 0;
+  border-top: 25px solid transparent;
+  border-bottom: 25px solid transparent;
+  border-left: 10px solid var(--syrian-green);
+}
+
+/* Syrian Star Pattern */
+.syrian-star-pattern {
+  background-image: radial-gradient(circle at 25% 25%, var(--syrian-gold) 2px, transparent 2px),
+                    radial-gradient(circle at 75% 75%, var(--syrian-gold) 2px, transparent 2px);
+  background-size: 50px 50px;
+  background-position: 0 0, 25px 25px;
+}
+
+/* Syrian Flag Accent Border */
+.syrian-flag-border {
+  border: 4px solid;
+  border-image: var(--syrian-flag-gradient) 1;
+  border-radius: 0.5rem;
+}
+
+/* Syrian Themed Buttons */
+.btn-syrian-primary {
+  background: linear-gradient(135deg, var(--syrian-red), var(--syrian-red-dark));
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-syrian-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-syrian-primary:hover::before {
+  left: 100%;
+}
+
+.btn-syrian-secondary {
+  background: linear-gradient(135deg, var(--syrian-green), var(--syrian-green-dark));
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-syrian-outline {
+  background: transparent;
+  color: var(--syrian-red);
+  border: 2px solid var(--syrian-red);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-syrian-outline:hover {
+  background: var(--syrian-red);
+  color: white;
+}
+
+/* Syrian Card Design */
+.syrian-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(206, 17, 38, 0.1);
+  border-top: 4px solid var(--syrian-red);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.syrian-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--syrian-flag-gradient);
+}
+
+.syrian-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(206, 17, 38, 0.15);
+}
+
+/* Syrian Hero Section */
+.syrian-hero {
+  background: linear-gradient(135deg, var(--syrian-red) 0%, var(--syrian-green) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.syrian-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/syria-flag-ribbon-design-with-text-vector.jpg') center/cover;
+  opacity: 0.1;
+  mix-blend-mode: overlay;
+}
+
+/* Syrian Text Styles */
+.syrian-heading {
+  background: var(--syrian-ribbon-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+.syrian-accent-text {
+  color: var(--syrian-red);
+  font-weight: 600;
+}
+
+/* Syrian Navigation */
+.syrian-nav {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid var(--syrian-red);
+}
+
+.syrian-nav-link {
+  color: var(--syrian-black);
+  font-weight: 500;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.syrian-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--syrian-red);
+  transition: width 0.3s ease;
+}
+
+.syrian-nav-link:hover::after,
+.syrian-nav-link.active::after {
+  width: 100%;
+}
+
+/* Syrian Footer */
+.syrian-footer {
+  background: linear-gradient(180deg, var(--syrian-black) 0%, var(--syrian-green-dark) 100%);
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .syrian-ribbon {
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0;
+  }
+  
+  .btn-syrian-primary,
+  .btn-syrian-secondary,
+  .btn-syrian-outline {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Animation Classes */
+.syrian-fade-in {
+  animation: syrianFadeIn 1s ease-out;
+}
+
+@keyframes syrianFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.syrian-slide-in {
+  animation: syrianSlideIn 0.8s ease-out;
+}
+
+@keyframes syrianSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

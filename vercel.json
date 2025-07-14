@@ -3,5 +3,15 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "nextjs"
-} 
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://hajiz-backend-of23ce9qo-omars-projects-ce6be162.vercel.app/api/:path*"
+    }
+  ],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://hajiz-backend-of23ce9qo-omars-projects-ce6be162.vercel.app/api"
+  }
+}

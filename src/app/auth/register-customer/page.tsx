@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth'; // Assuming this hook provides the register functionality
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import WhatsAppVerification from '@/components/WhatsAppVerification';
 
 export default function RegisterCustomerPage() {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ export default function RegisterCustomerPage() {
   });
   const [error, setError] = useState(''); // State to manage registration error messages
   const [isLoading, setIsLoading] = useState(false); // State to manage loading indicator for button
+  const [registrationMethod, setRegistrationMethod] = useState<'traditional' | 'whatsapp'>('traditional');
 
   const { register } = useAuth(); // Destructuring the register function from your authentication hook
   const router = useRouter(); // Next.js router for navigation
@@ -52,6 +54,18 @@ export default function RegisterCustomerPage() {
     }));
   };
 
+  // Handle WhatsApp verification success
+  const handleWhatsAppSuccess = (token: string) => {
+    // Store the token and redirect to dashboard or profile completion
+    localStorage.setItem('token', token);
+    router.push('/dashboard');
+  };
+
+  // Handle WhatsApp verification error
+  const handleWhatsAppError = (error: string) => {
+    setError(error);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8 bg-gray-100 font-inter">
       <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-6 sm:p-8 space-y-6 border-t-4 border-green-600">
@@ -72,6 +86,30 @@ export default function RegisterCustomerPage() {
           </p>
         </div>
 
+        {/* Registration Method Selection */}
+        <div className="flex space-x-4 rtl:space-x-reverse">
+          <button
+            onClick={() => setRegistrationMethod('traditional')}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+              registrationMethod === 'traditional'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            التسجيل التقليدي
+          </button>
+          <button
+            onClick={() => setRegistrationMethod('whatsapp')}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+              registrationMethod === 'whatsapp'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            التسجيل عبر واتساب
+          </button>
+        </div>
+
         {/* Display error message if present */}
         {error && (
           <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg relative text-sm sm:text-base" role="alert">
@@ -79,7 +117,8 @@ export default function RegisterCustomerPage() {
           </div>
         )}
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        {registrationMethod === 'traditional' ? (
+          <form className="space-y-6" onSubmit={handleSubmit}>
           {/* Full Name Input */}
           <div>
             <label htmlFor="name" className="sr-only">الاسم الكامل</label>
@@ -140,17 +179,26 @@ export default function RegisterCustomerPage() {
             />
           </div>
 
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
-              disabled={isLoading} // Disable button while loading
-            >
-              {isLoading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
-            </button>
+            {/* Submit Button */}
+            <div>
+              <button
+                type="submit"
+                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={isLoading} // Disable button while loading
+              >
+                {isLoading ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-6">
+            <WhatsAppVerification
+              type="register"
+              onSuccess={handleWhatsAppSuccess}
+              onError={handleWhatsAppError}
+            />
           </div>
-        </form>
+        )}
       </div>
     </div>
   );

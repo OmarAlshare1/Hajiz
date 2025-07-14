@@ -26,6 +26,30 @@
     /* The font-family itself is applied via `inter.className` on the body in layout.tsx */
   }
 
+  /* Remove red selection/outline on click */
+  * {
+    -webkit-tap-highlight-color: transparent;
+    outline: none !important;
+  }
+
+  *:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  *:active {
+    outline: none !important;
+  }
+
+  /* Remove text selection highlighting */
+  ::selection {
+    background: transparent;
+  }
+
+  ::-moz-selection {
+    background: transparent;
+  }
+
   /* Custom scrollbar styles */
   ::-webkit-scrollbar {
     width: 8px;
@@ -103,11 +127,11 @@
 
 @layer components {
   .btn-primary {
-    @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-semibold rounded-md shadow-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out;
+    @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-semibold rounded-md shadow-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150 ease-in-out;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-semibold rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out;
+    @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-semibold rounded-md text-primary-700 bg-primary-100 hover:bg-primary-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition duration-150 ease-in-out;
   }
 
   .btn-outline {
@@ -115,11 +139,11 @@
   }
 
   .input-primary {
-    @apply block w-full rounded-md border-gray-300 shadow-sm p-3 text-base text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition duration-150 ease-in-out;
+    @apply block w-full rounded-md border-gray-300 shadow-sm p-3 text-base text-gray-900 placeholder-gray-400 focus:border-primary-500 focus:ring-primary-500 sm:text-sm transition duration-150 ease-in-out;
   }
 
   .input-error {
-    @apply block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 shadow-sm p-3 text-base focus:border-red-500 focus:outline-none focus:ring-red-500 sm:text-sm transition duration-150 ease-in-out;
+    @apply block w-full rounded-md border-red-300 text-red-900 placeholder-red-300 shadow-sm p-3 text-base focus:border-red-500 focus:outline-none sm:text-sm transition duration-150 ease-in-out;
   }
 
   .label-primary {

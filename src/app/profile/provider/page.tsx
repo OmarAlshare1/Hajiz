@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { providers, appointments } from '../../../lib/api';
+import { providers, appointments, uploads } from '../../../lib/api';
 import { Dialog } from '@headlessui/react'; // Import Dialog component from Headless UI
 import CustomSelect from '../../../components/CustomSelect'; // Import CustomSelect component
+import ImageUpload from '../../../components/ImageUpload'; // Import ImageUpload component
 
 // Helper function to convert day string to number (not strictly used in rendering, but useful for backend interaction)
 const getDayNumber = (day: string): number => {
@@ -90,6 +91,132 @@ const generateTimeOptions = () => {
 };
 const timeOptions = generateTimeOptions();
 
+// Component for creating provider profile
+function CreateProviderProfileForm({ onSuccess }: { onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    businessName: '',
+    category: '',
+    description: '',
+    locationAddress: 'سوريا', // Default address
+    locationCoordinates: [36.2021, 37.1343] as [number, number], // Default coordinates (Aleppo, Syria)
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+
+    if (!formData.businessName || !formData.category) {
+      setError('يرجى ملء جميع الحقول المطلوبة');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      await providers.create({
+        businessName: formData.businessName,
+        category: formData.category,
+        description: formData.description || `${formData.businessName} - ${formData.category}`,
+        location: {
+          type: 'Point',
+          coordinates: formData.locationCoordinates,
+          address: formData.locationAddress,
+        },
+        services: [], // Empty services array - to be filled later
+        workingHours: [ // Default working hours
+          { day: 'sunday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'monday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'tuesday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'wednesday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'thursday', open: '09:00', close: '17:00', isClosed: false },
+          { day: 'friday', open: '09:00', close: '17:00', isClosed: true },
+          { day: 'saturday', open: '09:00', close: '17:00', isClosed: false }
+        ]
+      });
+      onSuccess();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'فشل إنشاء ملف مقدم الخدمة');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCategoryChange = (value: string | number) => {
+    setFormData(prev => ({ ...prev, category: value as string }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 text-right">
+      {error && (
+        <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">
+          <span className="block">{error}</span>
+        </div>
+      )}
+      
+      <div>
+        <label htmlFor="businessName" className="block text-sm font-medium text-gray-700 mb-1">
+          اسم العمل *
+        </label>
+        <input
+          id="businessName"
+          name="businessName"
+          type="text"
+          required
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="مثال: صالون الأمل، مطعم الوردة"
+          value={formData.businessName}
+          onChange={handleInputChange}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          فئة الخدمة *
+        </label>
+        <CustomSelect
+          label="فئة الخدمة"
+          options={allCategories}
+          value={formData.category}
+          onChange={handleCategoryChange}
+          className="w-full"
+          containerClasses="rounded-md shadow-sm border border-gray-300 focus-within:ring-blue-500 focus-within:border-blue-500"
+          selectClasses="py-2 px-3 text-sm text-gray-900 focus:outline-none"
+          placeholder="اختر الفئة"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          وصف العمل
+        </label>
+        <textarea
+          id="description"
+          name="description"
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="وصف مختصر عن خدماتك"
+          value={formData.description}
+          onChange={handleInputChange}
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed font-semibold"
+        disabled={isLoading}
+      >
+        {isLoading ? 'جاري الإنشاء...' : 'إنشاء ملف مقدم الخدمة'}
+      </button>
+    </form>
+  );
+}
 
 export default function ProviderProfilePage() {
   const router = useRouter();
@@ -438,16 +565,20 @@ export default function ProviderProfilePage() {
     );
   }
 
-  // Error fetching provider data
+  // Error fetching provider data or no provider profile exists
   if (providerError || !providerData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 font-inter p-4">
-        <div className="text-center p-8 bg-white rounded-xl shadow-2xl border-t-4 border-red-600 max-w-sm w-full">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">خطأ في تحميل البيانات</h2>
-          <p className="text-gray-700 text-lg">فشل تحميل ملف مقدم الخدمة. يرجى التأكد من أنك سجلت كمقدم خدمة.</p>
-          <button onClick={() => router.push('/auth/register-provider')} className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-semibold">
-            إنشاء ملف مقدم خدمة
-          </button>
+        <div className="text-center p-8 bg-white rounded-xl shadow-2xl border-t-4 border-yellow-600 max-w-md w-full">
+          <h2 className="text-2xl font-bold text-yellow-600 mb-4">ملف مقدم الخدمة غير مكتمل</h2>
+          <p className="text-gray-700 text-lg mb-6">
+            يبدو أنك مسجل كمقدم خدمة ولكن لم يتم إنشاء ملفك الشخصي بعد. 
+            يرجى إكمال معلومات ملفك الشخصي للوصول إلى لوحة التحكم.
+          </p>
+          <CreateProviderProfileForm onSuccess={() => {
+            refetchProvider();
+            setFormSuccess('تم إنشاء ملف مقدم الخدمة بنجاح!');
+          }} />
         </div>
       </div>
     );
@@ -472,6 +603,21 @@ export default function ProviderProfilePage() {
 
       {/* Main Grid Layout for Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        {/* Provider Images Section */}
+        <section className="bg-white rounded-xl shadow-lg p-6 sm:p-8 border-t-4 border-purple-600">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">صور مقدم الخدمة</h2>
+          <ImageUpload 
+            images={providerData.images || []} 
+            onImagesUpdate={(newImages) => {
+              // Update the provider data with the new images
+              queryClient.setQueryData(['provider-profile'], {
+                ...providerData,
+                images: newImages
+              });
+            }} 
+          />
+        </section>
+        
         {/* Provider Info Card */}
         <section className="bg-white rounded-xl shadow-lg p-6 sm:p-8 border-t-4 border-blue-600">
           <div className="flex justify-between items-center mb-6">
@@ -611,35 +757,68 @@ export default function ProviderProfilePage() {
           ) : appointmentsData && appointmentsData.length > 0 ? (
             <div className="space-y-4">
               {appointmentsData.map((apt: any) => (
-                <div key={apt._id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm text-right">
-                  <p className="font-semibold text-gray-800 text-lg mb-1">العميل: {apt.customer?.name || 'N/A'}</p>
-                  <p className="text-sm text-gray-600 mb-1">الخدمة: {apt.service?.name}</p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    التاريخ: {new Date(apt.dateTime).toLocaleString('ar-SY', { dateStyle: 'full', timeStyle: 'short' })}
-                  </p>
-                  <p className={`text-sm font-medium ${
-                      apt.status === 'confirmed' ? 'text-green-600' :
-                      apt.status === 'pending' ? 'text-orange-600' : // Changed yellow to orange for more contrast
-                      apt.status === 'cancelled' ? 'text-red-600' : 'text-blue-600' // Changed grey to blue for completed
-                  }`}>
-                    الحالة: {apt.status === 'pending' ? 'معلق' : apt.status === 'confirmed' ? 'مؤكد' : apt.status === 'cancelled' ? 'ملغى' : 'مكتمل'}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2 justify-end"> {/* Flex wrap for mobile, justify-end for RTL */}
-                    {apt.status === 'pending' && (
-                      <button onClick={() => handleUpdateAppointmentStatus(apt._id, 'confirmed')} className="bg-green-600 text-white px-4 py-2 text-sm rounded-md hover:bg-green-700 transition font-semibold">
-                        تأكيد
-                      </button>
-                    )}
-                    {(apt.status === 'pending' || apt.status === 'confirmed') && (
-                      <button onClick={() => handleUpdateAppointmentStatus(apt._id, 'cancelled')} className="bg-red-600 text-white px-4 py-2 text-sm rounded-md hover:bg-red-700 transition font-semibold">
-                        إلغاء
-                      </button>
-                    )}
-                    {apt.status === 'confirmed' && (
-                      <button onClick={() => handleUpdateAppointmentStatus(apt._id, 'completed')} className="bg-blue-600 text-white px-4 py-2 text-sm rounded-md hover:bg-blue-700 transition font-semibold">
-                        إتمام
-                      </button>
-                    )}
+                <div key={apt._id} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 text-right group">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-lg mb-1 group-hover:text-primary-700 transition-colors">
+                            {apt.customer?.name || 'عميل غير محدد'}
+                          </h3>
+                          <p className="text-primary-600 font-medium">{apt.service?.name}</p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium border ${
+                          apt.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                          apt.status === 'pending' ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                          apt.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}>
+                          {apt.status === 'pending' ? 'معلق' : apt.status === 'confirmed' ? 'مؤكد' : apt.status === 'cancelled' ? 'ملغى' : 'مكتمل'}
+                        </span>
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span className="text-sm font-medium">
+                          {new Date(apt.dateTime).toLocaleString('ar-SY', { dateStyle: 'full', timeStyle: 'short' })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-row-reverse sm:flex-col gap-2 sm:gap-3">
+                      {apt.status === 'pending' && (
+                        <button 
+                          onClick={() => handleUpdateAppointmentStatus(apt._id, 'confirmed')} 
+                          className="bg-green-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-green-700 hover:shadow-md transition-all duration-200 font-semibold flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          تأكيد
+                        </button>
+                      )}
+                      {(apt.status === 'pending' || apt.status === 'confirmed') && (
+                        <button 
+                          onClick={() => handleUpdateAppointmentStatus(apt._id, 'cancelled')} 
+                          className="bg-red-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-red-700 hover:shadow-md transition-all duration-200 font-semibold flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          إلغاء
+                        </button>
+                      )}
+                      {apt.status === 'confirmed' && (
+                        <button 
+                          onClick={() => handleUpdateAppointmentStatus(apt._id, 'completed')} 
+                          className="bg-blue-600 text-white px-4 py-2 text-sm rounded-lg hover:bg-blue-700 hover:shadow-md transition-all duration-200 font-semibold flex items-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          إتمام
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

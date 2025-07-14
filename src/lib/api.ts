@@ -1,15 +1,15 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 
+// Create an axios instance with a base URL
 const api = axios.create({
+  // Use environment variable for API URL if available, otherwise fallback to localhost
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
-// Add a request interceptor
+// Add a request interceptor to add the token to the request headers
 api.interceptors.request.use(
   (config) => {
+    // Check if we're in a browser environment
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('token');
       if (token) {
@@ -18,139 +18,145 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error: AxiosError) => {
+  (error) => {
     return Promise.reject(error);
   }
 );
 
-// Add a response interceptor
+// Add a response interceptor to handle 401 errors
 api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
-      localStorage.removeItem('token');
-      // Let components handle navigation using Next.js router
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Check if we're in a browser environment
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        // Use a more SSR-friendly approach instead of directly using window.location
+        // The actual redirect will be handled by the component using the auth context
+      }
     }
     return Promise.reject(error);
   }
 );
 
-// Auth
+// Auth API functions
 export const auth = {
-  login: (data: { phone: string; password: string }) =>
-    api.post('/auth/login', data),
-  register: (data: {
-    name: string;
-    phone: string;
-    email: string;
-    password: string;
-    role: 'customer' | 'provider';
+  login: (credentials: { phone: string; password: string }) => {
+    console.log('🔥 auth.login called with:', credentials);
+    console.log('🔥 Making POST request to:', (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api') + '/auth/login');
+    const request = api.post('/auth/login', credentials);
+    console.log('🔥 Request object created:', request);
+    return request;
+  },
+  register: (userData: { 
+    name: string; 
+    phone: string; 
+    password: string; 
+    email?: string; 
+    role?: 'customer' | 'provider';
     businessName?: string;
     category?: string;
-  }) => api.post('/auth/register', data),
+  }) => api.post('/auth/register', userData),
+  getCurrentUser: () => api.get('/auth/profile'),
   getProfile: () => api.get('/auth/profile'),
-  updateProfile: (data: {
-    name?: string;
-    email?: string;
-    password?: string;
-  }) => api.put('/auth/profile', data),
-  requestPasswordReset: (email: string) =>
-    api.post('/auth/forgot-password', { email }),
-  verifyResetCode: (code: string) =>
-    api.post('/auth/verify-reset-code', { code }),
-  resetPassword: (data: { code: string; password: string }) =>
-    api.post('/auth/reset-password', data),
-};
-
-// Appointments
-export const appointments = {
-  getAll: () => api.get('/appointments'),
-  getProviderAppointments: () => api.get('/appointments/provider'),
-  getById: (id: string) => api.get(`/appointments/${id}`),
-  create: (data: {
-    providerId: string;
-    serviceId: string;
-    dateTime: string;
-    notes?: string;
-  }) => api.post('/appointments', data),
-  update: (id: string, data: {
-    status?: 'confirmed' | 'cancelled' | 'completed';
-    dateTime?: string;
-    notes?: string;
-  }) => api.put(`/appointments/${id}`, data),
-  delete: (id: string) => api.delete(`/appointments/${id}`),
-  updateStatus: (id: string, status: string) =>
-    api.put(`/appointments/${id}/status`, { status }),
-};
-
-// Service Providers
-export const providers = {
-  getProfile: () => api.get('/providers/profile'),
-  update: ({ id, data }: {
-    id: string;
-    data: {
+  updateProfile: (userData: any) => api.put('/auth/profile', userData),
+  requestPasswordReset: (phone: string) => api.post('/auth/forgot-password/request', { phone }),
+  verifyResetCode: (phone: string, code: string) => api.post('/auth/forgot-password/verify', { phone, code }),
+  resetPassword: (phone: string, code: string, newPassword: string) => 
+    api.post('/auth/forgot-password/reset', { phone, code, newPassword }),
+  
+  // WhatsApp verification functions
+  whatsapp: {
+    // Registration with WhatsApp verification
+    sendRegistrationCode: (phone: string, countryCode: string) => 
+      api.post('/auth/whatsapp/register/send-code', { phone, countryCode }),
+    verifyRegistrationCode: (phone: string, code: string, userData: {
+      name: string;
+      password: string;
+      email?: string;
+      role?: 'customer' | 'provider';
       businessName?: string;
       category?: string;
-      description?: string;
-      location?: {
-        type: 'Point';
-        coordinates: [number, number];
-        address: string;
-      };
-    };
-  }) => api.put(`/providers/${id}`, data),
+    }) => api.post('/auth/whatsapp/register/verify-code', { phone, code, ...userData }),
+    
+    // Login with WhatsApp verification
+    sendLoginCode: (phone: string, countryCode: string) => 
+      api.post('/auth/whatsapp/login/send-code', { phone, countryCode }),
+    verifyLoginCode: (phone: string, code: string) => 
+      api.post('/auth/whatsapp/login/verify-code', { phone, code }),
+    
+    // Password reset with WhatsApp verification
+    sendPasswordResetCode: (phone: string, countryCode: string) => 
+      api.post('/auth/whatsapp/reset-password/send-code', { phone, countryCode }),
+    verifyPasswordResetCode: (phone: string, code: string, newPassword: string) => 
+      api.post('/auth/whatsapp/reset-password/verify-code', { phone, code, newPassword }),
+  },
+};
 
-  addService: (data: {
-    name: string;
-    duration: number;
-    price: number;
-    description: string;
-  }) => api.post('/providers/services', data),
-  updateService: (serviceId: string, data: {
-    name?: string;
-    duration?: number;
-    price?: number;
-    description?: string;
-  }) => api.put(`/providers/services/${serviceId}`, data),
-  deleteService: (serviceId: string) => api.delete(`/providers/services/${serviceId}`),
-  getAll: (params?: {
-    location?: string;
-    service?: string;
-    rating?: number;
-  }) => api.get('/providers', { params }),
+// Appointments API functions
+export const appointments = {
+  getAll: () => api.get('/appointments/customer'),
+  getProviderAppointments: () => api.get('/appointments/provider'),
+  getById: (id: string) => api.get(`/appointments/${id}`),
+  create: (appointmentData: any) => api.post('/appointments', appointmentData),
+  update: (id: string, appointmentData: any) => api.put(`/appointments/${id}`, appointmentData),
+  delete: (id: string) => api.delete(`/appointments/${id}`),
+  updateStatus: (id: string, status: string) => api.patch(`/appointments/${id}/status`, { status }),
+  addReview: (id: string, reviewData: any) => api.post(`/appointments/${id}/review`, reviewData),
+};
+
+// Provider API functions
+export const providers = {
+  getAll: (params: any = {}) => api.get('/providers', { params }),
   getById: (id: string) => api.get(`/providers/${id}`),
+  getProfile: () => api.get('/providers/profile'),
+  create: (profileData: any) => api.post('/providers', profileData),
+  updateProfile: (profileData: any) => api.put('/providers/profile', profileData),
+  update: ({ id, data }: { id: string; data: any }) => api.put(`/providers/${id}`, data),
+  addService: (data: any) => api.post('/providers/services', data),
+  updateService: (serviceId: string, data: any) => api.put(`/providers/services/${serviceId}`, data),
+  deleteService: (serviceId: string) => api.delete(`/providers/services/${serviceId}`),
   getServices: (id: string) => api.get(`/providers/${id}/services`),
-  getAvailability: (id: string, date: string) =>
-    api.get(`/providers/${id}/availability`, { params: { date } }),
-  updateWorkingHours: (data: {
-    day: number;
-    start: string;
-    end: string;
-    isOpen: boolean;
-  }[]) => api.put('/providers/working-hours', data),
+  getAvailability: (id: string, date: string) => api.get(`/providers/${id}/availability`, { params: { date } }),
+  updateWorkingHours: (data: any) => api.put('/providers/working-hours', data),
+  addAvailabilityException: (data: any) => api.post('/providers/availability-exceptions', data),
+  deleteAvailabilityException: (exceptionId: string) => api.delete(`/providers/availability-exceptions/${exceptionId}`),
+  getAvailabilityExceptions: () => api.get('/providers/availability-exceptions'),
 };
 
-// Reviews
-export const reviews = {
-  getByProvider: (providerId: string) =>
-    api.get(`/providers/${providerId}/reviews`),
-  create: (providerId: string, data: {
-    rating: number;
-    comment?: string;
-    appointmentId: string;
-  }) => api.post(`/providers/${providerId}/reviews`, data),
+// Upload API functions
+export const uploads = {
+  uploadProviderImages: (formData: FormData) => api.post('/uploads/provider/images', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }),
+  deleteProviderImage: (imageUrl: string) => api.delete('/uploads/provider/images', {
+    data: { imageUrl },
+  }),
 };
 
+// Search API functions
 export const search = {
   providers: (query: string) => api.get(`/search/providers?q=${query}`),
   categories: () => api.get('/search/categories'),
   popularServices: () => api.get('/search/popular-services'),
 };
 
+// Legacy forgotPassword export for backward compatibility
 export const forgotPassword = {
-  requestReset: (phone: string) => api.post('/auth/forgot-password/request', { phone }),
-  verifyCode: (phone: string, code: string) => api.post('/auth/forgot-password/verify', { phone, code }),
-  resetPassword: (phone: string, code: string, newPassword: string) => api.post('/auth/forgot-password/reset', { phone, code, newPassword }),
+  requestReset: (phone: string) => auth.requestPasswordReset(phone),
+  verifyCode: (phone: string, code: string) => auth.verifyResetCode(phone, code),
+  resetPassword: (phone: string, code: string, newPassword: string) => auth.resetPassword(phone, code, newPassword),
+};
+
+// Reviews API functions
+export const reviews = {
+  getByProvider: (providerId: string) => api.get(`/providers/${providerId}/reviews`),
+  // Note: Reviews are created through appointments.addReview(appointmentId, reviewData)
+  // after an appointment is completed
 };
 
 export default api;

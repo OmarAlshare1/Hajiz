@@ -1,5 +1,5 @@
-import { Metadata } from 'next';
-import HomePage from '../components/home/HomePage';
+import type { Metadata } from 'next';
+import SyrianHomepage from '../components/SyrianHomepage';
 
 export const metadata: Metadata = {
   title: 'الرئيسية - حجز',
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <HomePage />;
+  return <SyrianHomepage />;
 }

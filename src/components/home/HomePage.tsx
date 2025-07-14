@@ -4,6 +4,8 @@ import React, { useState } from 'react'; // Importing React and useState hook
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'; // Importing search icon from Heroicons
 import { search } from '../../lib/api'; // Assuming 'search' API provides search functionality
 import { useRouter } from 'next/navigation'; // Next.js router for navigation
+import { useTranslations } from '../../hooks/useTranslations'; // Hook for internationalization translations
+import '../../styles/syrian-theme.css'; // Import Syrian theme styles
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState(''); // State for the search input field
@@ -11,6 +13,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);     // State to indicate if a search is in progress
   const [error, setError] = useState<string | null>(null); // State to store any search error messages
   const router = useRouter(); // Initialize Next.js router
+  const { t } = useTranslations('Common'); // Initialize translations hook
 
   // Function to handle the search submission
   const handleSearch = async (e: React.FormEvent) => {
@@ -35,30 +38,31 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative isolate min-h-screen bg-gray-100 font-inter pt-24 pb-16">
-      {/* Decorative Background Element (Keep if intended for visual flair) */}
-      {/* Note: Complex clipPath might have minor performance implications on very old/low-end mobile devices */}
-      <div
-        className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
-        aria-hidden="true"
-      >
-        <div
-          className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-blue-200 to-indigo-200 opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"
-          style={{
-            clipPath:
-              'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
-          }}
-        />
+    <div className="relative isolate min-h-screen syrian-hero font-inter pt-24 pb-16">
+      {/* Syrian Wave Background */}
+      <div className="syrian-wave-bg"></div>
+      
+      {/* Syrian Flag Decorations */}
+      <div className="absolute top-20 left-10 w-16 h-12 opacity-30 hidden md:block">
+        <img src="/flag-of-syrian-arab-republic-vector.jpg" alt="Syrian Flag" className="w-full h-full object-cover rounded shadow-lg" />
+      </div>
+      <div className="absolute top-32 right-10 w-16 h-12 opacity-30 hidden md:block">
+        <img src="/syria-flag-ribbon-design.jpg" alt="Syrian Flag Ribbon" className="w-full h-full object-cover rounded shadow-lg" />
+      </div>
+      
+      {/* Hajiz Logo */}
+      <div className="absolute top-10 left-1/2 transform -translate-x-1/2 hidden sm:block">
+        <img src="/hajiz logo.jpeg" alt="Hajiz Logo" className="h-16 w-auto rounded-lg shadow-lg" />
       </div>
 
       {/* Hero Section */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center relative z-10">
         <div className="mx-auto max-w-2xl">
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 mb-4 leading-tight">
-            حجز - احجز موعدك بسهولة
+          <h1 className="syrian-heading text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 leading-tight">
+            {t('welcome')} - {t('heroDescription')}
           </h1>
-          <p className="mt-4 text-lg sm:text-xl leading-relaxed text-gray-600">
-            منصة حجز المواعيد الأولى في سوريا. احجز موعدك مع أفضل مقدمي الخدمات في مجالات متعددة.
+          <p className="mt-4 text-lg sm:text-xl leading-relaxed text-white/90">
+            {t('platformDescription')}
           </p>
           <div className="mt-10">
             {/* Search Bar Form */}

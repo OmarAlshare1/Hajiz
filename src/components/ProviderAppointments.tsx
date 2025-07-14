@@ -8,6 +8,11 @@ import { useRouter } from 'next/navigation'; // Next.js router for navigation
 // CustomSelect is not used in this component's logic, but keeping import as it was present in original
 // import CustomSelect from '@/components/CustomSelect';
 
+// Helper function to conditionally join class names
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
 export default function ProviderAppointments() {
   const { user, isLoading: userLoading } = useAuth(); // Get authenticated user and loading state
   const queryClient = useQueryClient(); // Get query client for cache invalidation
@@ -102,7 +107,7 @@ export default function ProviderAppointments() {
           <h2 className="text-2xl font-bold text-red-600 mb-4">خطأ في تحميل المواعيد</h2>
           <p className="text-gray-700 text-lg">فشل تحميل مواعيد العملاء. يرجى المحاولة مرة أخرى لاحقاً.</p>
           {/* Optional: Add a refresh button or link to home */}
-          <button onClick={() => router.reload()} className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-semibold">
+          <button onClick={() => router.refresh()} className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition font-semibold">
             إعادة المحاولة
           </button>
         </div>

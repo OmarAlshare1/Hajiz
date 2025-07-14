@@ -1,133 +1,138 @@
 'use client';
 
-import React from 'react'; // React is implicitly used, good to keep it for clarity
+import React from 'react';
+import { useTranslations } from '../../hooks/useTranslations';
+import '../../styles/syrian-theme.css';
 
 export default function PolicyPage() {
-  // Placeholder: You should update this manually when the policy content changes
   const lastUpdatedDate = '19 يونيو 2025';
+  const { t } = useTranslations();
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8 bg-gray-100 min-h-screen font-inter">
-      {/* Main content card for the policy document */}
-      <div className="max-w-3xl mx-auto py-8 px-6 sm:px-8 lg:px-10 bg-white rounded-xl shadow-2xl border-t-4 border-blue-600">
-        {/* Page Title */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4 text-center leading-tight">
-          سياسة الخصوصية وشروط الاستخدام
-        </h1>
-        {/* Last Updated Date */}
-        <p className="text-center text-sm sm:text-base text-gray-500 mb-8">
-          آخر تحديث: {lastUpdatedDate}
-        </p>
-
-        {/* Introduction Section */}
-        <section className="mb-8 border-b border-gray-200 pb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">مقدمة</h2>
-          <p className="text-gray-700 leading-loose text-base sm:text-lg text-right">
-            نحن في منصة حجز نهتم بخصوصيتك وأمان بياناتك. تهدف هذه السياسة إلى توضيح كيفية جمع واستخدام وحماية معلوماتك الشخصية عند استخدامك لموقعنا وخدماتنا. يرجى قراءة هذه السياسة بعناية.
+    <div className="min-h-screen bg-gray-100 font-inter">
+      {/* Syrian Hero Header */}
+      <div className="syrian-hero relative overflow-hidden py-16">
+        {/* Syrian Wave Background */}
+        <div className="syrian-wave-bg"></div>
+        
+      
+        
+        {/* Hajiz Logo */}
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 w-24 h-24">
+          <img src="/hajiz logo.jpeg" alt="Hajiz Logo" className="w-full h-full object-contain rounded-full shadow-lg" />
+        </div>
+        
+        {/* Hero Content */}
+        <div className="relative z-10 text-center text-white px-4 mt-16">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 drop-shadow-lg">
+            سياسة الخصوصية
+          </h1>
+          <p className="text-xl md:text-2xl mb-8 drop-shadow-md">
+            نحن نحترم خصوصيتك ونحمي بياناتك الشخصية
           </p>
-        </section>
+        </div>
+      </div>
 
-        {/* Information We Collect Section */}
-        <section className="mb-8 border-b border-gray-200 pb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">المعلومات التي نجمعها</h2>
-          <ul className="list-none text-gray-700 space-y-3 leading-loose text-base sm:text-lg pr-6"> {/* Removed list-inside to control padding with pr-6 */}
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">معلومات التسجيل: تتضمن الاسم، رقم الهاتف، والبريد الإلكتروني الذي تقدمه عند إنشاء حساب.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">بيانات الحجز والمعاملات: التفاصيل المتعلقة بالخدمات التي تحجزها، بما في ذلك مقدم الخدمة، التوقيت، وأي ملاحظات خاصة.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">معلومات الجهاز والموقع الجغرافي: قد نجمع معلومات حول الجهاز الذي تستخدمه للوصول إلى منصتنا (مثل نوع الجهاز، نظام التشغيل) وموقعك الجغرافي التقريبي عند الضرورة لتقديم الخدمات.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">بيانات الاستخدام: معلومات حول كيفية تفاعلك مع موقعنا، مثل الصفحات التي تزورها، والوقت المستغرق.</span>
-            </li>
-          </ul>
-        </section>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">سياسة الخصوصية</h2>
+            <p className="text-gray-600">آخر تحديث: {lastUpdatedDate}</p>
+          </div>
 
-        {/* How Information is Used Section */}
-        <section className="mb-8 border-b border-gray-200 pb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">كيفية استخدام المعلومات</h2>
-          <ul className="list-none text-gray-700 space-y-3 leading-loose text-base sm:text-lg pr-6">
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">تقديم الخدمات: لإدارة حجوزاتك، وتسهيل التواصل بينك وبين مقدمي الخدمات، وتقديم الدعم الفني.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">تحسين التجربة: لتحسين وظائف المنصة وتجربة المستخدم، وتخصيص المحتوى والعروض.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">الامتثال القانوني: للامتثال للمتطلبات القانونية والتنظيمية، وحماية حقوقنا وحقوق مستخدمينا.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">التواصل: لإرسال تحديثات حول خدماتك، وإشعارات المواعيد، ورسائل ترويجية (مع خيار إلغاء الاشتراك).</span>
-            </li>
-          </ul>
-        </section>
+          <div className="space-y-8 text-gray-700 leading-relaxed">
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">1. المعلومات التي نجمعها</h3>
+              <p className="mb-4">
+                نحن نجمع المعلومات التي تقدمها لنا مباشرة عند التسجيل في منصة حجز، بما في ذلك:
+              </p>
+              <ul className="list-disc list-inside space-y-2 mr-6">
+                <li>الاسم الكامل</li>
+                <li>عنوان البريد الإلكتروني</li>
+                <li>رقم الهاتف</li>
+                <li>العنوان (للمقدمين)</li>
+                <li>معلومات الخدمات المقدمة (للمقدمين)</li>
+              </ul>
+            </section>
 
-        {/* Data Protection Section */}
-        <section className="mb-8 border-b border-gray-200 pb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">حماية البيانات</h2>
-          <p className="text-gray-700 leading-loose text-base sm:text-lg text-right">
-            نلتزم بحماية بياناتك الشخصية. نستخدم أحدث تقنيات التشفير (مثل SSL/TLS)، وإجراءات الأمان المادية والإلكترونية، والتخزين الآمن لحماية بياناتك من الوصول غير المصرح به أو التعديل أو الكشف أو الإتلاف. تتم مراجعة وتحديث إجراءات الأمان لدينا بانتظام.
-          </p>
-        </section>
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">2. كيف نستخدم معلوماتك</h3>
+              <p className="mb-4">
+                نستخدم المعلومات التي نجمعها للأغراض التالية:
+              </p>
+              <ul className="list-disc list-inside space-y-2 mr-6">
+                <li>تقديم وتحسين خدماتنا</li>
+                <li>التواصل معك بشأن حسابك والخدمات</li>
+                <li>معالجة المواعيد والحجوزات</li>
+                <li>تقديم الدعم الفني</li>
+                <li>إرسال التحديثات والإشعارات المهمة</li>
+              </ul>
+            </section>
 
-        {/* User Rights Section */}
-        <section className="mb-8 border-b border-gray-200 pb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">حقوق المستخدم</h2>
-          <ul className="list-none text-gray-700 space-y-3 leading-loose text-base sm:text-lg pr-6">
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">الحق في الوصول والتعديل: يمكنك الوصول إلى بياناتك الشخصية وتحديثها من خلال إعدادات حسابك.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">الحق في الحذف: يمكنك طلب حذف حسابك وبياناتك الشخصية، مع مراعاة المتطلبات القانونية والاحتفاظ بالبيانات الضرورية.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">الحق في الاعتراض: لديك الحق في الاعتراض على معالجة بياناتك الشخصية لأسباب معينة.</span>
-            </li>
-            <li className="relative">
-              <span className="absolute right-0 top-0 text-blue-600 text-lg sm:text-xl transform -translate-x-full">•</span>
-              <span className="inline-block pr-6">الحق في تلقي الإشعارات: سيتم إشعارك بأي خروقات أمنية قد تؤثر على بياناتك.</span>
-            </li>
-          </ul>
-        </section>
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">3. مشاركة المعلومات</h3>
+              <p className="mb-4">
+                نحن لا نبيع أو نؤجر أو نشارك معلوماتك الشخصية مع أطراف ثالثة، باستثناء:
+              </p>
+              <ul className="list-disc list-inside space-y-2 mr-6">
+                <li>عندما تطلب ذلك صراحة</li>
+                <li>لتقديم الخدمات المطلوبة (مثل مشاركة معلومات الاتصال مع مقدمي الخدمات)</li>
+                <li>عند الضرورة القانونية</li>
+                <li>لحماية حقوقنا أو حقوق الآخرين</li>
+              </ul>
+            </section>
 
-        {/* Policy Amendments Section */}
-        <section className="mb-8 border-b border-gray-200 pb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">التعديلات على السياسة</h2>
-          <p className="text-gray-700 leading-loose text-base sm:text-lg text-right">
-            قد نقوم بتحديث هذه السياسة من وقت لآخر لتعكس التغييرات في ممارساتنا أو لأسباب قانونية أو تنظيمية. سيتم إشعارك بأي تغييرات هامة عبر إعلان بارز على موقعنا أو عبر البريد الإلكتروني (إذا كان ذلك مناسباً) قبل أن تصبح التغييرات سارية المفعول.
-          </p>
-        </section>
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">4. أمان البيانات</h3>
+              <p>
+                نحن نتخذ تدابير أمنية مناسبة لحماية معلوماتك الشخصية من الوصول غير المصرح به أو التغيير أو الكشف أو التدمير. 
+                نستخدم تشفير SSL وتدابير أمنية أخرى لحماية بياناتك أثناء النقل والتخزين.
+              </p>
+            </section>
 
-        {/* Contact Us Section */}
-        <section className="mb-8">
-          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 text-right">التواصل معنا</h2>
-          <p className="text-gray-700 leading-loose text-base sm:text-lg text-right">
-            لأي استفسارات أو طلبات تتعلق بخصوصيتك أو بهذه السياسة، يرجى التواصل معنا عبر البريد الإلكتروني:
-            <a href="mailto:Admin@hajiz.co.uk" className="text-blue-600 underline hover:text-blue-800 rtl:mr-1 ltr:ml-1 transition duration-150 ease-in-out">
-              Admin@hajiz.co.uk
-            </a>
-          </p>
-        </section>
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">5. حقوقك</h3>
+              <p className="mb-4">
+                لديك الحق في:
+              </p>
+              <ul className="list-disc list-inside space-y-2 mr-6">
+                <li>الوصول إلى معلوماتك الشخصية</li>
+                <li>تصحيح أو تحديث معلوماتك</li>
+                <li>حذف حسابك ومعلوماتك</li>
+                <li>الاعتراض على معالجة معلوماتك</li>
+                <li>طلب نسخة من بياناتك</li>
+              </ul>
+            </section>
 
-        {/* Logos Section */}
-        <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-8 mt-10 pt-4 border-t border-gray-200">
-          <img src="/Syriatel_logo.png" alt="Syriatel Logo" className="h-10 sm:h-12 w-auto object-contain transition transform hover:scale-105" />
-          <img src="/MTN_Logo.svg.png" alt="MTN Logo" className="h-10 sm:h-12 w-auto object-contain transition transform hover:scale-105" />
-          {/* Add more relevant logos as needed with responsive sizing and hover effects */}
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">6. ملفات تعريف الارتباط</h3>
+              <p>
+                نستخدم ملفات تعريف الارتباط (Cookies) لتحسين تجربتك على موقعنا، وتذكر تفضيلاتك، وتحليل استخدام الموقع. 
+                يمكنك التحكم في ملفات تعريف الارتباط من خلال إعدادات متصفحك.
+              </p>
+            </section>
+
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">7. التغييرات على هذه السياسة</h3>
+              <p>
+                قد نقوم بتحديث سياسة الخصوصية هذه من وقت لآخر. سنقوم بإشعارك بأي تغييرات مهمة عبر البريد الإلكتروني أو 
+                من خلال إشعار على موقعنا. استمرار استخدامك لخدماتنا بعد هذه التغييرات يعني موافقتك على السياسة المحدثة.
+              </p>
+            </section>
+
+            <section>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-4">8. اتصل بنا</h3>
+              <p className="mb-4">
+                إذا كان لديك أي أسئلة حول سياسة الخصوصية هذه أو ممارساتنا في التعامل مع المعلومات، يرجى الاتصال بنا:
+              </p>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p><strong>البريد الإلكتروني:</strong> privacy@hajiz.com</p>
+                <p><strong>الهاتف:</strong> +963-XXX-XXXX</p>
+                <p><strong>العنوان:</strong> دمشق، سوريا</p>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </div>

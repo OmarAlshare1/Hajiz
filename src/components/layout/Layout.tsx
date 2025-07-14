@@ -18,7 +18,7 @@ import {
 import { ChevronDownIcon } from '@heroicons/react/20/solid'; // Chevron down icon for dropdowns
 import Link from 'next/link';       // Next.js Link component for client-side navigation
 import { usePathname, useRouter } from 'next/navigation'; // useRouter and usePathname hooks from Next.js App Router
-import { useTranslations } from 'next-intl'; // Hook for internationalization translations
+import { useTranslations } from '../../hooks/useTranslations'; // Hook for internationalization translations
 import { useAuth } from '../../hooks/useAuth'; // Custom authentication hook
 
 // Define main navigation links
@@ -46,7 +46,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // State for mobile menu open/close
   const router = useRouter(); // Next.js router instance
   const pathname = usePathname(); // Get current pathname for active link highlighting
-  const t = useTranslations('Common'); // Initialize translations hook
+  const { t } = useTranslations('Common'); // Initialize translations hook
 
   // Use authentication context to get user data and authentication status
   const { user, isAuthenticated, logout } = useAuth();
@@ -89,7 +89,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   key={item.name}
                   href={item.href}
                   className={classNames(
-                    pathname === item.href || (item.name === 'providers' && pathname.startsWith('/providers'))
+                    pathname === item.href || (item.href !== '/' && pathname && typeof pathname === 'string' && pathname.startsWith(item.href))
                       ? 'bg-blue-50 text-blue-700 font-semibold' // Active link styling
                       : 'text-gray-700 hover:bg-gray-50 hover:text-blue-700', // Inactive link styling
                     'rounded-md px-3 py-2 text-sm font-medium transition duration-150 ease-in-out'
@@ -128,7 +128,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             href={item.href}
                             onClick={() => setMobileMenuOpen(false)} // Close menu on click
                             className={classNames(
-                              pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
+                              pathname === item.href || (item.href !== '/' && pathname && typeof pathname === 'string' && pathname.startsWith(item.href))
                                 ? 'bg-blue-50 text-blue-700'
                                 : 'text-gray-700',
                               'block px-4 py-2 text-sm hover:bg-gray-100 transition duration-150 ease-in-out text-right'
@@ -219,7 +219,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   src="/hajiz logo.jpeg"
                   alt="Hajiz"
                 />
-                <span className="rtl:mr-2 ltr:ml-2 text-xl font-semibold text-gray-900">حجز</span> {/* App name next to logo */}
+                <span className="rtl:mr-2 ltr:ml-2 text-xl font-semibold text-green-600">حجز</span> {/* App name next to logo */}
               </Link>
               <button
                 type="button"
@@ -239,7 +239,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       onClick={() => setMobileMenuOpen(false)} // Close menu on click
                       className={classNames(
-                        pathname === item.href || (item.name === 'providers' && pathname.startsWith('/providers'))
+                        pathname === item.href || (item.name === 'providers' && pathname && typeof pathname === 'string' && pathname.startsWith('/providers'))
                           ? 'bg-blue-50 text-blue-700 font-semibold'
                           : 'text-gray-900 hover:bg-gray-50',
                         '-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 transition duration-150 ease-in-out'
@@ -261,7 +261,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           href={item.href}
                           onClick={() => setMobileMenuOpen(false)}
                           className={classNames(
-                            pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
+                            pathname === item.href || (item.href !== '/' && pathname && typeof pathname === 'string' && pathname.startsWith(item.href))
                               ? 'bg-blue-50 text-blue-700 font-semibold'
                               : 'text-gray-900 hover:bg-gray-50',
                             '-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 transition duration-150 ease-in-out'
@@ -318,22 +318,37 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white mt-auto py-8 shadow-md">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center sm:flex sm:items-center sm:justify-between">
-          {/* Logos and Policy Link */}
-          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-4 sm:order-2">
-            <Link href="/policy" className="text-blue-600 hover:underline font-semibold text-sm transition duration-150 ease-in-out">سياسة الخصوصية</Link>
-            <img src="/syriatel.png" alt="Syriatel Logo" className="h-8 w-auto object-contain hover:scale-105 transition transform duration-150" />
-            <img src="/mtn.png" alt="MTN Logo" className="h-8 w-auto object-contain hover:scale-105 transition transform duration-150" />
-            <img src="/vercel.svg" alt="Vercel Logo" className="h-8 w-auto object-contain hover:scale-105 transition transform duration-150" />
-            <img src="/next.svg" alt="Next.js Logo" className="h-8 w-auto object-contain hover:scale-105 transition transform duration-150" />
-          </div>
-          {/* Copyright Text */}
-          <div className="mt-8 sm:mt-0 sm:order-1 text-center sm:text-left">
-            <p className="text-xs leading-5 text-gray-500">
-              &copy; {new Date().getFullYear()} Hajiz. جميع الحقوق محفوظة
+      <footer className="syrian-footer mt-auto py-8 shadow-md relative">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center sm:flex sm:items-center sm:justify-between relative z-10">
+          {/* Hajiz Logo and Syrian Flag */}
+          <div className="flex flex-col items-center sm:items-start sm:order-1 mb-6 sm:mb-0">
+            <div className="flex items-center gap-3 mb-2">
+              <img src="/hajiz logo.jpeg" alt="Hajiz Logo" className="h-10 w-auto object-contain rounded" />
+              <div className="h-6 w-8 bg-gradient-to-b from-red-600 via-white to-green-600 rounded"></div>
+            </div>
+            <p className="text-xs leading-5 text-white/80">
+              &copy; {new Date().getFullYear()} Hajiz. {t('allRightsReserved')}
             </p>
           </div>
+          
+          {/* Partners and Links */}
+          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-4 sm:order-2">
+            <Link href="/policy" className="text-white hover:text-yellow-300 font-semibold text-sm transition duration-150 ease-in-out">
+              {t('privacy')}
+            </Link>
+            <div className="flex items-center gap-4">
+              <img src="/Syriatel_logo.png" alt="Syriatel Logo" className="h-8 w-auto object-contain hover:scale-105 transition transform duration-150" />
+              <img src="/MTN_Logo.svg.png" alt="MTN Logo" className="h-8 w-auto object-contain hover:scale-105 transition transform duration-150" />
+            </div>
+          </div>
+        </div>
+        
+        {/* Syrian Flag Corner Decorations */}
+        <div className="absolute bottom-2 left-2 w-8 h-6 opacity-20">
+          <div className="w-full h-full bg-gradient-to-b from-red-600 via-white to-green-600 rounded"></div>
+        </div>
+        <div className="absolute bottom-2 right-2 w-8 h-6 opacity-20">
+          <div className="w-full h-full bg-gradient-to-b from-red-600 via-white to-green-600 rounded"></div>
         </div>
       </footer>
     </div>

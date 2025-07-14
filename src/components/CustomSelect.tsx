@@ -59,23 +59,26 @@ export default function CustomSelect({
           <Listbox.Button
             id={id} // Apply the ID for accessibility
             className={classNames(
-              "relative w-full cursor-default rounded-md bg-white py-3 pr-10 pl-4 text-right shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm text-base",
+              "relative w-full cursor-pointer rounded-lg bg-white py-3 pr-10 pl-4 text-right shadow-sm ring-1 ring-inset ring-gray-300 transition-all duration-200 ease-in-out hover:ring-gray-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 sm:text-sm text-base",
               // Adjust icon padding based on RTL/LTR
               "rtl:pr-10 rtl:pl-4",
               "ltr:pl-4 ltr:pr-10",
-              containerClasses // Apply classes passed for the container around the button
+              containerClasses || '' // Apply classes passed for the container around the button
             )}
           >
-            <span className="block truncate">
+            <span className={classNames(
+              "block truncate",
+              selectedOption ? "text-gray-900 font-medium" : "text-gray-500"
+            )}>
               {selectedOption ? selectedOption.label : placeholder || 'اختر خيارا...'}
             </span>
             {/* Chevron Up/Down Icon */}
             <span className={classNames(
-                "pointer-events-none absolute inset-y-0 flex items-center pr-2",
-                "rtl:left-0 rtl:pr-2", // Icon on the left for RTL
-                "ltr:right-0 ltr:pl-2"  // Icon on the right for LTR
+                "pointer-events-none absolute inset-y-0 flex items-center pr-3",
+                "rtl:left-0 rtl:pr-3", // Icon on the left for RTL
+                "ltr:right-0 ltr:pl-3"  // Icon on the right for LTR
             )}>
-              <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+              <ChevronUpDownIcon className="h-5 w-5 text-gray-400 transition-transform duration-200" aria-hidden="true" />
             </span>
           </Listbox.Button>
 
@@ -89,8 +92,8 @@ export default function CustomSelect({
           >
             <Listbox.Options
               className={classNames(
-                "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-10 focus:outline-none sm:text-sm",
-                selectClasses // Apply classes passed for the actual select element/options container
+                "absolute z-10 mt-2 max-h-60 w-full overflow-auto rounded-xl bg-white py-2 text-base shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-gray-200",
+                selectClasses || '' // Apply classes passed for the actual select element/options container
               )}
             >
               {options.map((option) => (
@@ -98,11 +101,11 @@ export default function CustomSelect({
                   key={option.value}
                   className={({ active }) =>
                     classNames(
-                      "relative cursor-default select-none py-2 px-4 text-right", // Base styling for options
+                      "relative cursor-pointer select-none py-3 px-4 text-right rounded-md mx-1", // Base styling for options with rounded corners and margin
                       "rtl:pl-10 rtl:pr-4", // Padding for selected checkmark on left for RTL
                       "ltr:pr-10 ltr:pl-4", // Padding for selected checkmark on right for LTR
-                      active ? 'bg-blue-100 text-blue-900' : 'text-gray-900', // Active (hover/focus) state
-                      "transition duration-100 ease-in-out" // Smooth transition
+                      active ? 'bg-blue-50 text-blue-900 shadow-sm' : 'text-gray-900 hover:bg-gray-50', // Enhanced active and hover states
+                      "transition-all duration-150 ease-in-out" // Smooth transition
                     )
                   }
                   value={option.value}
@@ -112,7 +115,7 @@ export default function CustomSelect({
                       <span
                         className={classNames(
                           'block truncate',
-                          selected ? 'font-semibold' : 'font-normal' // Bold text for selected option
+                          selected ? 'font-semibold text-blue-900' : 'font-medium' // Bold text for selected option with color
                         )}
                       >
                         {option.label}
@@ -126,7 +129,7 @@ export default function CustomSelect({
                             active ? 'text-blue-600' : 'text-blue-500' // Color checkmark based on active state
                           )}
                         >
-                          <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                          <CheckIcon className="h-4 w-4" aria-hidden="true" />
                         </span>
                       ) : null}
                     </>

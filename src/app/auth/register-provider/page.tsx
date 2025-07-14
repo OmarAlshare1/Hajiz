@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth'; // Assuming this hook provides the re
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CustomSelect from '../../../components/CustomSelect'; // Import CustomSelect
+import WhatsAppVerification from '@/components/WhatsAppVerification';
 
 // Define categories to match your backend's expected categories for providers
 const providerCategories = [
@@ -32,6 +33,7 @@ export default function RegisterProviderPage() {
   });
   const [error, setError] = useState(''); // State to manage registration error messages
   const [isLoading, setIsLoading] = useState(false); // State to manage loading indicator for button
+  const [registrationMethod, setRegistrationMethod] = useState<'traditional' | 'whatsapp'>('traditional');
 
   const { register } = useAuth(); // Destructuring the register function from your authentication hook
   const router = useRouter(); // Next.js router for navigation
@@ -75,6 +77,18 @@ export default function RegisterProviderPage() {
     }));
   };
 
+  // Handle WhatsApp verification success
+  const handleWhatsAppSuccess = (token: string) => {
+    // Store the token and redirect to dashboard or profile completion
+    localStorage.setItem('token', token);
+    router.push('/dashboard');
+  };
+
+  // Handle WhatsApp verification error
+  const handleWhatsAppError = (error: string) => {
+    setError(error);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center py-8 px-4 sm:px-6 lg:px-8 bg-gray-100 font-inter">
       <div className="max-w-md w-full bg-white rounded-xl shadow-2xl p-6 sm:p-8 space-y-6 border-t-4 border-teal-600">
@@ -89,6 +103,30 @@ export default function RegisterProviderPage() {
           </p>
         </div>
 
+        {/* Registration Method Selection */}
+        <div className="flex space-x-4 rtl:space-x-reverse">
+          <button
+            onClick={() => setRegistrationMethod('traditional')}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+              registrationMethod === 'traditional'
+                ? 'bg-teal-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            التسجيل التقليدي
+          </button>
+          <button
+            onClick={() => setRegistrationMethod('whatsapp')}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+              registrationMethod === 'whatsapp'
+                ? 'bg-teal-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            التسجيل عبر واتساب
+          </button>
+        </div>
+
         {/* Display error message if present */}
         {error && (
           <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg relative text-sm sm:text-base" role="alert">
@@ -96,7 +134,8 @@ export default function RegisterProviderPage() {
           </div>
         )}
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        {registrationMethod === 'traditional' ? (
+          <form className="space-y-6" onSubmit={handleSubmit}>
           {/* Section: Personal Details */}
           <div className="space-y-4"> {/* Added space-y for internal section spacing */}
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 text-right pb-2 border-b border-gray-200">معلومات الحساب الشخصي</h3>
@@ -205,19 +244,28 @@ export default function RegisterProviderPage() {
             </button>
           </div>
 
-          {/* Existing Account Link */}
-          <div className="text-center pt-4"> {/* Added pt-4 for spacing */}
-            <p className="text-sm sm:text-base text-gray-600">
-              لديك حساب بالفعل؟{' '}
-              <Link
-                href="/auth/login"
-                className="font-medium text-teal-600 hover:text-teal-800 transition duration-150 ease-in-out"
-              >
-                تسجيل الدخول
-              </Link>
-            </p>
+            {/* Existing Account Link */}
+            <div className="text-center pt-4"> {/* Added pt-4 for spacing */}
+              <p className="text-sm sm:text-base text-gray-600">
+                لديك حساب بالفعل؟{' '}
+                <Link
+                  href="/auth/login"
+                  className="font-medium text-teal-600 hover:text-teal-800 transition duration-150 ease-in-out"
+                >
+                  تسجيل الدخول
+                </Link>
+              </p>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-6">
+            <WhatsAppVerification
+              type="register"
+              onSuccess={handleWhatsAppSuccess}
+              onError={handleWhatsAppError}
+            />
           </div>
-        </form>
+        )}
       </div>
     </div>
   );
