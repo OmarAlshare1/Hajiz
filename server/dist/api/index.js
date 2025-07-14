@@ -95,21 +95,49 @@ const limiter = (0, express_rate_limit_1.default)({
 });
 app.use(limiter);
 const mongoOptions = {
-    serverSelectionTimeoutMS: 30000,
+    serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
     maxPoolSize: 10,
-    minPoolSize: 5,
+    minPoolSize: 0,
     maxIdleTimeMS: 30000,
-    connectTimeoutMS: 30000
+    bufferCommands: false,
+    bufferMaxEntries: 0
 };
-mongoose_1.default.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz', mongoOptions)
-    .then(() => {
-    console.log('MongoDB Connected successfully');
-    console.log('Connection state:', mongoose_1.default.connection.readyState);
-})
-    .catch(err => {
-    console.error('MongoDB connection error:', err);
-    console.error('Connection string:', process.env.MONGODB_URI ? 'URI provided' : 'Using default localhost');
+const connectDB = async () => {
+    try {
+        if (mongoose_1.default.connection.readyState === 0) {
+            console.log('Attempting MongoDB connection...');
+            await mongoose_1.default.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz', mongoOptions);
+            console.log('MongoDB Connected successfully');
+            console.log('Connection state:', mongoose_1.default.connection.readyState);
+        }
+        else {
+            console.log('MongoDB already connected, state:', mongoose_1.default.connection.readyState);
+        }
+    }
+    catch (err) {
+        console.error('MongoDB connection error:', err);
+        console.error('Connection string:', process.env.MONGODB_URI ? 'URI provided' : 'Using default localhost');
+        console.error('Continuing without database connection...');
+    }
+};
+connectDB();
+app.use(async (_req, res, next) => {
+    if (mongoose_1.default.connection.readyState !== 1) {
+        console.log('Database not connected, attempting reconnection...');
+        try {
+            await connectDB();
+        }
+        catch (error) {
+            console.error('Failed to reconnect to database:', error);
+            return res.status(503).json({
+                success: false,
+                error: 'Database connection unavailable'
+            });
+        }
+    }
+    return next();
 });
 mongoose_1.default.connection.on('error', (err) => {
     console.error('MongoDB connection error:', err);

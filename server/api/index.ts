@@ -83,25 +83,56 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Connect to MongoDB with proper timeout settings
+// Connect to MongoDB with optimized settings for serverless
 const mongoOptions = {
-  serverSelectionTimeoutMS: 30000, // 30 seconds
-  socketTimeoutMS: 45000, // 45 seconds
+  serverSelectionTimeoutMS: 5000, // Reduced to 5 seconds for serverless
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000, // Reduced connection timeout
   maxPoolSize: 10,
-  minPoolSize: 5,
+  minPoolSize: 0, // Allow pool to scale down to 0 in serverless
   maxIdleTimeMS: 30000,
-  connectTimeoutMS: 30000
+  bufferCommands: false, // Disable mongoose buffering
+  bufferMaxEntries: 0 // Disable mongoose buffering
 };
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz', mongoOptions)
-  .then(() => {
-    console.log('MongoDB Connected successfully');
-    console.log('Connection state:', mongoose.connection.readyState);
-  })
-  .catch(err => {
+// Enhanced connection with better error handling
+const connectDB = async () => {
+  try {
+    if (mongoose.connection.readyState === 0) {
+      console.log('Attempting MongoDB connection...');
+      await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hajiz', mongoOptions);
+      console.log('MongoDB Connected successfully');
+      console.log('Connection state:', mongoose.connection.readyState);
+    } else {
+      console.log('MongoDB already connected, state:', mongoose.connection.readyState);
+    }
+  } catch (err) {
     console.error('MongoDB connection error:', err);
     console.error('Connection string:', process.env.MONGODB_URI ? 'URI provided' : 'Using default localhost');
-  });
+    // Don't exit process in serverless environment
+    console.error('Continuing without database connection...');
+  }
+};
+
+// Connect to database
+connectDB();
+
+// Middleware to ensure database connection on each request
+app.use(async (_req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    console.log('Database not connected, attempting reconnection...');
+    try {
+      await connectDB();
+    } catch (error) {
+      console.error('Failed to reconnect to database:', error);
+      return res.status(503).json({
+        success: false,
+        error: 'Database connection unavailable'
+      });
+    }
+  }
+  return next();
+});
 
 // Handle MongoDB connection events
 mongoose.connection.on('error', (err) => {
