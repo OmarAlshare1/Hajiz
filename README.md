@@ -68,7 +68,7 @@ npm install
 cp .env.example .env
 ```
 
-4. Update the `.env` file with your configuration:
+4. Update the `.env` file with the configuration:
 ```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/hajiz
